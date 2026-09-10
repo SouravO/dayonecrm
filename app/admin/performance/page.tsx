@@ -79,10 +79,10 @@ export default async function PerformancePage() {
   }
 
   const statusData = [
-    { name: 'Completed', value: statusCounts.Completed, color: '#6366f1' },
-    { name: 'In Progress', value: statusCounts['In Progress'], color: '#22c55e' },
+    { name: 'Completed', value: statusCounts.Completed, color: '#ca2f2b' },
+    { name: 'In Progress', value: statusCounts['In Progress'], color: '#10b981' },
     { name: 'Pending', value: statusCounts.Pending, color: '#f59e0b' },
-    { name: 'Overdue', value: statusCounts.Overdue, color: '#ef4444' },
+    { name: 'Overdue', value: statusCounts.Overdue, color: '#e11d48' },
   ]
 
   // Performance table

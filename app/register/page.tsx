@@ -3,6 +3,7 @@
 import { useActionState } from 'react'
 import Link from 'next/link'
 import { registerStartup } from '@/features/registrations/actions'
+import { Logo } from '@/components/brand/Logo'
 import type { ActionState } from '@/types'
 
 export default function RegisterPage() {
@@ -70,24 +71,10 @@ export default function RegisterPage() {
     >
       <div style={{ width: '100%', maxWidth: 480 }}>
         {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: 40 }}>
-          <div
-            style={{
-              width: 48,
-              height: 48,
-              background: 'var(--color-brand)',
-              borderRadius: 12,
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 18,
-              fontWeight: 800,
-              color: '#fff',
-              marginBottom: 16,
-            }}
-          >
-            D1
-          </div>
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <Link href="/" style={{ display: 'inline-block', marginBottom: 12 }}>
+            <Logo size="lg" />
+          </Link>
           <h1
             style={{
               fontSize: 24,

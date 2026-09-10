@@ -41,14 +41,15 @@ interface Props {
   statusData: StatusData[]
 }
 
-const CHART_COLORS = ['#6366f1', '#22c55e', '#f59e0b', '#ef4444']
+const CHART_COLORS = ['#ca2f2b', '#10b981', '#f59e0b', '#0ea5e9']
 
 export function PerformanceCharts({ barData, trendData, statusData }: Props) {
   const tooltipStyle = {
-    backgroundColor: '#17171f',
-    border: '1px solid #2a2a38',
+    backgroundColor: '#ffffff',
+    border: '1px solid #e2dbbe',
     borderRadius: 8,
-    color: '#f1f5f9',
+    color: '#1e1b18',
+    boxShadow: '0 4px 16px rgba(45, 38, 25, 0.08)',
     fontSize: 13,
   }
 
@@ -66,15 +67,15 @@ export function PerformanceCharts({ barData, trendData, statusData }: Props) {
         ) : (
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={barData} margin={{ top: 4, right: 16, left: -16, bottom: 4 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#2a2a38" />
+              <CartesianGrid strokeDasharray="3 3" stroke="#e2dbbe" />
               <XAxis
                 dataKey="name"
-                tick={{ fill: '#94a3b8', fontSize: 12 }}
-                axisLine={{ stroke: '#2a2a38' }}
+                tick={{ fill: '#5a5348', fontSize: 12 }}
+                axisLine={{ stroke: '#e2dbbe' }}
               />
               <YAxis
-                tick={{ fill: '#94a3b8', fontSize: 12 }}
-                axisLine={{ stroke: '#2a2a38' }}
+                tick={{ fill: '#5a5348', fontSize: 12 }}
+                axisLine={{ stroke: '#e2dbbe' }}
                 domain={[0, 100]}
                 tickFormatter={(v) => `${v}%`}
               />
@@ -83,11 +84,11 @@ export function PerformanceCharts({ barData, trendData, statusData }: Props) {
                 formatter={(value) => [`${value}%`, '']}
               />
               <Legend
-                wrapperStyle={{ fontSize: 12, color: '#94a3b8' }}
+                wrapperStyle={{ fontSize: 12, color: '#5a5348' }}
               />
-              <Bar dataKey="completion" name="Completion %" fill="#6366f1" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="early" name="Early %" fill="#22c55e" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="onTime" name="On-Time %" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="completion" name="Completion %" fill="#ca2f2b" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="early" name="Early %" fill="#10b981" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="onTime" name="On-Time %" fill="#0ea5e9" radius={[4, 4, 0, 0]} />
               <Bar dataKey="late" name="Late %" fill="#f59e0b" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -107,15 +108,15 @@ export function PerformanceCharts({ barData, trendData, statusData }: Props) {
           ) : (
             <ResponsiveContainer width="100%" height={220}>
               <LineChart data={trendData} margin={{ top: 4, right: 16, left: -16, bottom: 4 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#2a2a38" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2dbbe" />
                 <XAxis
                   dataKey="week"
-                  tick={{ fill: '#94a3b8', fontSize: 11 }}
-                  axisLine={{ stroke: '#2a2a38' }}
+                  tick={{ fill: '#5a5348', fontSize: 11 }}
+                  axisLine={{ stroke: '#e2dbbe' }}
                 />
                 <YAxis
-                  tick={{ fill: '#94a3b8', fontSize: 11 }}
-                  axisLine={{ stroke: '#2a2a38' }}
+                  tick={{ fill: '#5a5348', fontSize: 11 }}
+                  axisLine={{ stroke: '#e2dbbe' }}
                   domain={[0, 100]}
                   tickFormatter={(v) => `${v}%`}
                 />
@@ -126,9 +127,9 @@ export function PerformanceCharts({ barData, trendData, statusData }: Props) {
                 <Line
                   type="monotone"
                   dataKey="completion"
-                  stroke="#6366f1"
+                  stroke="#ca2f2b"
                   strokeWidth={2}
-                  dot={{ fill: '#6366f1', strokeWidth: 0, r: 4 }}
+                  dot={{ fill: '#ca2f2b', strokeWidth: 0, r: 4 }}
                   activeDot={{ r: 6 }}
                 />
               </LineChart>
@@ -166,7 +167,7 @@ export function PerformanceCharts({ barData, trendData, statusData }: Props) {
                   formatter={(value, name) => [value, name]}
                 />
                 <Legend
-                  wrapperStyle={{ fontSize: 12, color: '#94a3b8' }}
+                  wrapperStyle={{ fontSize: 12, color: '#5a5348' }}
                   formatter={(value) => value}
                 />
               </PieChart>

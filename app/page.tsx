@@ -1,8 +1,9 @@
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { Logo } from '@/components/brand/Logo'
 
 export const metadata: Metadata = {
-  title: 'Day One — Build Your Startup With Structure',
+  title: 'Day One — Venture Studio by iQue',
   description:
     'Day One is a venture studio that helps startups grow from scratch with structured weekly planning, task tracking, and performance analytics.',
 }
@@ -12,27 +13,9 @@ export default function LandingPage() {
     <div style={{ minHeight: '100vh', background: 'var(--color-background)' }}>
       {/* ── Navigation ── */}
       <nav className="landing-nav">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div
-            style={{
-              width: 32,
-              height: 32,
-              background: 'var(--color-brand)',
-              borderRadius: 8,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 800,
-              fontSize: 14,
-              color: '#fff',
-            }}
-          >
-            D1
-          </div>
-          <span style={{ fontWeight: 700, fontSize: 16, color: 'var(--color-text-primary)' }}>
-            Day One
-          </span>
-        </div>
+        <Link href="/" style={{ textDecoration: 'none' }}>
+          <Logo size="sm" />
+        </Link>
         <div style={{ display: 'flex', gap: 12 }}>
           <Link href="/login" className="btn btn-ghost btn-sm">
             Sign in
@@ -54,10 +37,19 @@ export default function LandingPage() {
         }}
       >
         <div
-          className="badge badge-info animate-fade-in"
-          style={{ marginBottom: 24, display: 'inline-flex' }}
+          className="badge badge-cream animate-fade-in"
+          style={{
+            marginBottom: 28,
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 8,
+            padding: '6px 18px',
+          }}
         >
-          Venture Studio Platform
+          <span style={{ color: 'var(--color-brand)', fontSize: 11 }}>✦</span>
+          <span className="font-serif-italic" style={{ textTransform: 'none', fontSize: 13, color: 'var(--color-text-secondary)' }}>
+            venture studio by iQue
+          </span>
         </div>
         <h1
           className="gradient-text"
@@ -367,7 +359,7 @@ export default function LandingPage() {
         style={{
           padding: '100px 24px',
           textAlign: 'center',
-          background: 'radial-gradient(ellipse at 50% 50%, rgba(99,102,241,0.15) 0%, transparent 60%)',
+          background: 'radial-gradient(ellipse at 50% 50%, rgba(202, 47, 43, 0.18) 0%, transparent 65%)',
         }}
       >
         <h2
@@ -408,38 +400,30 @@ export default function LandingPage() {
       <footer
         style={{
           borderTop: '1px solid var(--color-border)',
-          padding: '24px 48px',
+          padding: '28px 48px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          background: 'var(--color-surface)',
         }}
       >
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: 8,
+            gap: 12,
             color: 'var(--color-text-muted)',
             fontSize: 13,
           }}
         >
-          <div
-            style={{
-              width: 20,
-              height: 20,
-              background: 'var(--color-brand)',
-              borderRadius: 4,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 9,
-              fontWeight: 800,
-              color: '#fff',
-            }}
-          >
-            D1
+          <Logo size="icon" />
+          <div>
+            <span style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>Day One</span>
+            <span style={{ margin: '0 6px', opacity: 0.5 }}>·</span>
+            <span className="font-serif-italic" style={{ color: 'var(--color-text-secondary)' }}>
+              venture studio by iQue
+            </span>
           </div>
-          Day One Venture Studio
         </div>
         <span style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
           © 2026 Day One. All rights reserved.

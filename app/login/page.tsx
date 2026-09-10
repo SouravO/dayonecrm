@@ -3,6 +3,7 @@
 import { useActionState } from 'react'
 import Link from 'next/link'
 import { login } from '@/features/auth/actions'
+import { Logo } from '@/components/brand/Logo'
 import type { ActionState } from '@/types'
 
 export default function LoginPage() {
@@ -21,36 +22,19 @@ export default function LoginPage() {
     >
       <div style={{ width: '100%', maxWidth: 420 }}>
         {/* Logo */}
-        <div style={{ textAlign: 'center', marginBottom: 40 }}>
-          <div
+        <div style={{ textAlign: 'center', marginBottom: 32 }}>
+          <Link href="/" style={{ display: 'inline-block', marginBottom: 12 }}>
+            <Logo size="lg" />
+          </Link>
+          <p
             style={{
-              width: 48,
-              height: 48,
-              background: 'var(--color-brand)',
-              borderRadius: 12,
-              display: 'inline-flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: 18,
-              fontWeight: 800,
-              color: '#fff',
-              marginBottom: 16,
+              fontSize: 14,
+              color: 'var(--color-text-secondary)',
+              fontFamily: 'var(--font-serif)',
+              fontStyle: 'italic',
             }}
           >
-            D1
-          </div>
-          <h1
-            style={{
-              fontSize: 24,
-              fontWeight: 700,
-              color: 'var(--color-text-primary)',
-              marginBottom: 6,
-            }}
-          >
-            Welcome back
-          </h1>
-          <p style={{ fontSize: 14, color: 'var(--color-text-muted)' }}>
-            Sign in to your Day One account
+            Venture Studio Management Platform
           </p>
         </div>
 
