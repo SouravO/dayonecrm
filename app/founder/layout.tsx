@@ -32,12 +32,21 @@ export default async function FounderLayout({ children }: { children: React.Reac
       ? (member.startup[0] as { name: string }).name
       : 'My Startup'
 
+  const navItems = [
+    ...founderNavItems,
+    {
+      href: member?.startup_id ? `/tv/${member.startup_id}` : '/tv',
+      label: 'Live TV Wall',
+      icon: '📺',
+    },
+  ]
+
   return (
     <div className="app-shell">
       <Sidebar
         brandLabel={startupName}
         brandSublabel="Founder Dashboard"
-        navItems={founderNavItems}
+        navItems={navItems}
         userName={session.full_name}
         userEmail={session.email}
         userRole="Founder"

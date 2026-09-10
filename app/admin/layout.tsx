@@ -11,6 +11,7 @@ const adminNavItems = [
   { href: '/admin/startups', label: 'Startups', icon: '🚀' },
   { href: '/admin/performance', label: 'Performance', icon: '📈' },
   { href: '/admin/activity', label: 'Activity', icon: '⚡' },
+  { href: '/tv', label: 'Live TV Wall', icon: '📺' },
 ]
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {

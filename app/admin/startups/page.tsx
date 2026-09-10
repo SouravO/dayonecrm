@@ -42,6 +42,9 @@ export default async function StartupsPage() {
           <h1 className="page-title">All Startups</h1>
           <p className="page-subtitle">Portfolio overview — {startups?.length || 0} startups</p>
         </div>
+        <Link href="/tv" target="_blank" className="btn btn-secondary btn-sm">
+          📺 Multi-TV Studio Hub
+        </Link>
       </div>
 
       {startups?.length === 0 ? (
@@ -150,12 +153,23 @@ export default async function StartupsPage() {
                       )}
                     </td>
                     <td>
-                      <Link
-                        href={`/admin/startups/${startup.id}`}
-                        className="btn btn-ghost btn-sm"
-                      >
-                        View →
-                      </Link>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <Link
+                          href={`/tv/${startup.id}`}
+                          target="_blank"
+                          className="btn btn-secondary btn-sm"
+                          title="Open Live TV Display for this startup"
+                          style={{ padding: '4px 8px', fontSize: 12 }}
+                        >
+                          📺 TV
+                        </Link>
+                        <Link
+                          href={`/admin/startups/${startup.id}`}
+                          className="btn btn-ghost btn-sm"
+                        >
+                          View →
+                        </Link>
+                      </div>
                     </td>
                   </tr>
                 )

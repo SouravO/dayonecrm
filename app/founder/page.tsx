@@ -21,6 +21,7 @@ import {
   UserPlus,
   ListTodo,
   Sparkles,
+  MonitorPlay,
 } from 'lucide-react'
 
 export const metadata: Metadata = { title: 'Founder Command Center — Day One' }
@@ -148,6 +149,17 @@ export default async function FounderDashboard() {
 
         {/* Header Action Buttons */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          {startupId && (
+            <Link
+              href={`/tv/${startupId}`}
+              target="_blank"
+              className="btn btn-secondary btn-sm"
+              title="Launch dedicated TV mission control screen for wall display"
+            >
+              <MonitorPlay className="w-3.5 h-3.5 text-purple-600" />
+              <span>TV Display</span>
+            </Link>
+          )}
           <Link href="/founder/tasks" className="btn btn-secondary btn-sm">
             <Plus className="w-3.5 h-3.5" />
             <span>New Task</span>

@@ -17,6 +17,7 @@ import {
   LogOut,
   Building2,
   Sparkles,
+  Tv,
 } from 'lucide-react'
 
 interface NavItem {
@@ -37,6 +38,10 @@ interface SidebarProps {
 function renderNavIcon(icon: string) {
   const iconProps = { className: 'w-4 h-4 transition-colors' }
   switch (icon) {
+    case 'tv':
+    case 'monitor':
+    case '📺':
+      return <Tv {...iconProps} />
     case 'dashboard':
     case '📊':
       return <LayoutDashboard {...iconProps} />
