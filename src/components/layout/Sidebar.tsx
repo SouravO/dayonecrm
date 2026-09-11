@@ -26,9 +26,12 @@ interface NavItem {
   icon: string
 }
 
+import { CompanyLogo } from '@/components/brand/CompanyLogo'
+
 interface SidebarProps {
   brandLabel: string
   brandSublabel: string
+  brandLogoUrl?: string | null
   navItems: NavItem[]
   userName: string
   userEmail: string
@@ -80,15 +83,13 @@ function renderNavIcon(icon: string) {
 export function Sidebar({
   brandLabel,
   brandSublabel,
+  brandLogoUrl,
   navItems,
   userName,
   userEmail,
   userRole,
 }: SidebarProps) {
   const pathname = usePathname()
-
-  // Get initial for startup badge
-  const initial = brandLabel ? brandLabel.charAt(0).toUpperCase() : 'D'
 
   return (
     <aside className="sidebar">
@@ -111,24 +112,7 @@ export function Sidebar({
             gap: 10,
           }}
         >
-          <div
-            style={{
-              width: 32,
-              height: 32,
-              borderRadius: 8,
-              background: 'linear-gradient(135deg, #ca2f2b 0%, #a82420 100%)',
-              color: '#ffffff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontWeight: 800,
-              fontSize: 14,
-              boxShadow: '0 2px 6px rgba(202, 47, 43, 0.25)',
-              flexShrink: 0,
-            }}
-          >
-            {initial}
-          </div>
+          <CompanyLogo logoUrl={brandLogoUrl} name={brandLabel} size={32} />
           <div style={{ flex: 1, minWidth: 0 }}>
             <div
               style={{

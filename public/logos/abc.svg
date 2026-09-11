@@ -1,0 +1,15 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="abcGrad" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#E63935"/>
+      <stop offset="1" stop-color="#9E1F1C"/>
+    </linearGradient>
+    <filter id="abcGlow" x="-10" y="-10" width="140" height="140" filterUnits="userSpaceOnUse">
+      <feDropShadow dx="0" dy="4" stdDeviation="6" flood-color="#ca2f2b" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+  <rect width="120" height="120" rx="28" fill="url(#abcGrad)"/>
+  <path d="M60 26L88 88H72L60 61L48 88H32L60 26Z" fill="white" filter="url(#abcGlow)"/>
+  <polygon points="60,42 52,60 68,60" fill="#9E1F1C"/>
+  <circle cx="60" cy="74" r="5" fill="white"/>
+</svg>

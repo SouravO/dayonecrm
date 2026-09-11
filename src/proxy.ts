@@ -42,7 +42,11 @@ export async function proxy(request: NextRequest) {
   // Public routes that don't require auth
   const publicRoutes = ['/', '/login', '/register', '/unauthorized']
   const isPublicRoute = publicRoutes.some(
-    (route) => pathname === route || pathname.startsWith('/_next') || pathname.startsWith('/api')
+    (route) =>
+      pathname === route ||
+      pathname.startsWith('/_next') ||
+      pathname.startsWith('/api') ||
+      pathname.startsWith('/tv')
   )
 
   // If not authenticated and trying to access protected routes

@@ -8,7 +8,70 @@ export interface TvPayload {
     email: string
     status: string
     initial: string
+    logo_url: string | null
   }
+  stage: 'MVP' | 'GTM' | 'Growth'
+  sector: string
+  healthScore: {
+    score: number
+    status: 'On Track' | 'Ahead' | 'At Risk'
+    motto: string
+    velocity?: number
+    efficiency?: number
+    alignment?: number
+  }
+  priorities: {
+    total: number
+    completed: number
+    rate: number
+  }
+  financials: {
+    monthlyTarget: string
+    achievedAmount: string
+    targetRate: number
+    revenue: string
+    burn: string
+    runwayMonths: number
+    runwayStatus: string
+  }
+  growth: {
+    leads: number
+    leadsChange: string
+    customers: number
+    customersChange: string
+    cac: string
+    cacChange: string
+    weeklyTrend: Array<{ day: string; leads: number; customers: number }>
+  }
+  execution: {
+    milestonesCount: string
+    milestonesPercent: number
+    mentorRating: string
+    criticalBlockersCount: number
+    founderExecutionScore: number
+  }
+  highlights: {
+    topWins: string[]
+    criticalBlockers: string[]
+    valueSpotlight: {
+      items: string[]
+      bannerText: string
+    }
+  }
+  founderOfTheWeek: {
+    name: string
+    startupName: string
+    award: string
+    citation: string
+    tagline: string
+    achievements?: string[]
+  }
+  activeBlockersList?: Array<{
+    id: string
+    title: string
+    owner: string
+    urgency: 'URGENT' | 'HIGH' | 'MEDIUM'
+  }>
   sprint: {
     id: string | null
     weekStart: string
@@ -56,6 +119,9 @@ export interface TvStartupSummary {
   planGoal: string | null
   tasksCount: number
   domainsCount: number
+  logo_url: string | null
+  sector?: string
+  stage?: 'MVP' | 'GTM' | 'Growth'
 }
 
 export function getWeekBoundaries(date: Date = new Date()) {
@@ -75,6 +141,341 @@ export function getWeekBoundaries(date: Date = new Date()) {
     sundayStr: sunday.toISOString().split('T')[0],
     monday,
     sunday,
+  }
+}
+
+function getCompanyVentureProfile(startupName: string, doneTasksCount: number, totalTasksCount: number) {
+  const norm = (startupName || '').toLowerCase()
+
+  if (norm.includes('bare logic')) {
+    return {
+      stage: 'Growth' as const,
+      sector: 'Skincare / Beauty Tech',
+      healthScore: {
+        score: 76,
+        status: 'On Track' as const,
+        motto: 'Building something brighter.',
+        velocity: 92,
+        efficiency: 86,
+        alignment: 88,
+      },
+      priorities: {
+        total: 5,
+        completed: 4,
+        rate: 80,
+      },
+      financials: {
+        monthlyTarget: '₹10L',
+        achievedAmount: '₹7.2L',
+        targetRate: 72,
+        revenue: '₹7.2L',
+        burn: '₹3.1L',
+        runwayMonths: 8,
+        runwayStatus: 'Solid runway to scale.',
+      },
+      growth: {
+        leads: 840,
+        leadsChange: '+18%',
+        customers: 126,
+        customersChange: '+24%',
+        cac: '₹420',
+        cacChange: '+12%',
+        weeklyTrend: [
+          { day: 'Mon', leads: 260, customers: 36 },
+          { day: 'Tue', leads: 420, customers: 60 },
+          { day: 'Wed', leads: 590, customers: 85 },
+          { day: 'Thu', leads: 680, customers: 102 },
+          { day: 'Fri', leads: 760, customers: 114 },
+          { day: 'Sat', leads: 810, customers: 121 },
+          { day: 'Sun', leads: 840, customers: 126 },
+        ],
+      },
+      execution: {
+        milestonesCount: '7/10',
+        milestonesPercent: 70,
+        mentorRating: '8/10',
+        criticalBlockersCount: 2,
+        founderExecutionScore: 82,
+      },
+      highlights: {
+        topWins: [
+          'Revenue crossed ₹7.2L',
+          '4/5 priorities completed',
+          'Lead generation reached 840',
+        ],
+        criticalBlockers: [
+          'Packaging vendor delay',
+          'Performance ad creative refresh needed',
+        ],
+        valueSpotlight: {
+          items: [
+            'Science-led skincare',
+            'Barrier-first routines',
+            'High repeat-purchase potential',
+          ],
+          bannerText: 'Brand built for repeat trust.',
+        },
+      },
+      founderOfTheWeek: {
+        name: 'Rohan Mehta',
+        startupName: 'Bare Logic',
+        award: 'CHAMPIONING PROGRESS',
+        citation: 'Recognised for strongest weekly execution and milestone progress.',
+        tagline: 'BOLDER FOUNDERS BRIGHTER TOMORROW',
+        achievements: [
+          '80% Weekly Sprint Completion',
+          'Fastest Blocker Resolution',
+          '4/5 Core Domain Deliverables Shipped',
+        ],
+      },
+      activeBlockersList: [
+        { id: 'b1', title: 'Packaging vendor delivery delay for glass droppers', owner: 'Operations Lead', urgency: 'URGENT' as const },
+        { id: 'b2', title: 'Performance ad creative refresh needed for Meta CBO', owner: 'Growth Lead', urgency: 'HIGH' as const },
+      ],
+    }
+  }
+
+  if (norm.includes('apex')) {
+    return {
+      stage: 'GTM' as const,
+      sector: 'AI & Automation',
+      healthScore: {
+        score: 84,
+        status: 'Ahead' as const,
+        motto: 'Scaling intelligent workflows.',
+        velocity: 96,
+        efficiency: 91,
+        alignment: 94,
+      },
+      priorities: {
+        total: Math.max(6, totalTasksCount),
+        completed: Math.max(5, doneTasksCount),
+        rate: 83,
+      },
+      financials: {
+        monthlyTarget: '₹15L',
+        achievedAmount: '₹12.4L',
+        targetRate: 83,
+        revenue: '₹12.4L',
+        burn: '₹4.8L',
+        runwayMonths: 14,
+        runwayStatus: 'Strong cash runway.',
+      },
+      growth: {
+        leads: 1240,
+        leadsChange: '+32%',
+        customers: 210,
+        customersChange: '+28%',
+        cac: '₹680',
+        cacChange: '-8%',
+        weeklyTrend: [
+          { day: 'Mon', leads: 340, customers: 55 },
+          { day: 'Tue', leads: 560, customers: 92 },
+          { day: 'Wed', leads: 780, customers: 130 },
+          { day: 'Thu', leads: 950, customers: 165 },
+          { day: 'Fri', leads: 1100, customers: 188 },
+          { day: 'Sat', leads: 1190, customers: 202 },
+          { day: 'Sun', leads: 1240, customers: 210 },
+        ],
+      },
+      execution: {
+        milestonesCount: '9/10',
+        milestonesPercent: 90,
+        mentorRating: '9/10',
+        criticalBlockersCount: 1,
+        founderExecutionScore: 89,
+      },
+      highlights: {
+        topWins: [
+          'Enterprise pilot signed with TechCorp',
+          'Agentic pipeline latency reduced by 40%',
+          'MRR crossed ₹12L milestone',
+        ],
+        criticalBlockers: [
+          'GPU cluster capacity limit during peak inference',
+        ],
+        valueSpotlight: {
+          items: [
+            'Autonomous developer agents',
+            'SOC2 Type II ready architecture',
+            'Zero-prompt integration sdk',
+          ],
+          bannerText: 'Enterprise agent infrastructure leader.',
+        },
+      },
+      founderOfTheWeek: {
+        name: 'Alex Rivera',
+        startupName: 'Apex Labs',
+        award: 'TECHNICAL EXCELLENCE',
+        citation: 'Exemplary speed in deploying scalable LLM developer agents.',
+        tagline: 'BUILDING TOMORROW WITH PRECISION',
+        achievements: [
+          '83% Sprint Deliverables Shipped',
+          'Enterprise Pilot Signed (TechCorp)',
+          'Sub-200ms Agent Latency Achieved',
+        ],
+      },
+      activeBlockersList: [
+        { id: 'b1', title: 'GPU cluster capacity limit during peak inference hours', owner: 'Infra Lead', urgency: 'URGENT' as const },
+      ],
+    }
+  }
+
+  if (norm.includes('chava')) {
+    return {
+      stage: 'MVP' as const,
+      sector: 'Clean Energy / IoT',
+      healthScore: {
+        score: 72,
+        status: 'On Track' as const,
+        motto: 'Powering decentralized grids.',
+        velocity: 82,
+        efficiency: 78,
+        alignment: 80,
+      },
+      priorities: {
+        total: Math.max(5, totalTasksCount),
+        completed: Math.max(3, doneTasksCount),
+        rate: 60,
+      },
+      financials: {
+        monthlyTarget: '₹8L',
+        achievedAmount: '₹5.1L',
+        targetRate: 64,
+        revenue: '₹5.1L',
+        burn: '₹2.4L',
+        runwayMonths: 11,
+        runwayStatus: 'Disciplined capital burn.',
+      },
+      growth: {
+        leads: 420,
+        leadsChange: '+14%',
+        customers: 48,
+        customersChange: '+19%',
+        cac: '₹850',
+        cacChange: '-5%',
+        weeklyTrend: [
+          { day: 'Mon', leads: 120, customers: 12 },
+          { day: 'Tue', leads: 190, customers: 22 },
+          { day: 'Wed', leads: 260, customers: 31 },
+          { day: 'Thu', leads: 320, customers: 38 },
+          { day: 'Fri', leads: 370, customers: 43 },
+          { day: 'Sat', leads: 400, customers: 46 },
+          { day: 'Sun', leads: 420, customers: 48 },
+        ],
+      },
+      execution: {
+        milestonesCount: '6/10',
+        milestonesPercent: 60,
+        mentorRating: '8/10',
+        criticalBlockersCount: 2,
+        founderExecutionScore: 78,
+      },
+      highlights: {
+        topWins: [
+          'Hardware prototype passed thermal stress test',
+          'Field trial secured with 3 commercial buildings',
+          'Grant funding approved for renewable battery hub',
+        ],
+        criticalBlockers: [
+          'Firmware OTA update certification pending',
+          'Component lead time extended by 2 weeks',
+        ],
+        valueSpotlight: {
+          items: [
+            'Next-gen battery management',
+            'Real-time IoT grid balancing',
+            'High safety lifecycle guarantee',
+          ],
+          bannerText: 'Clean energy hardware engineered for longevity.',
+        },
+      },
+      founderOfTheWeek: {
+        name: 'Chava Bright Team',
+        startupName: 'Chava Bright',
+        award: 'CLEANTECH INNOVATOR',
+        citation: 'Breakthrough hardware energy efficiency achievements.',
+        tagline: 'SUSTAINABLE POWER FOR COMMUNITIES',
+      },
+    }
+  }
+
+  // Default / ABC / Sandra Murray fallback
+  const calculatedPriorities = Math.max(totalTasksCount, 5)
+  const calculatedDone = Math.min(doneTasksCount, calculatedPriorities)
+  const calcRate = Math.round((calculatedDone / calculatedPriorities) * 100) || 75
+
+  return {
+    stage: 'Growth' as const,
+    sector: 'Venture Incubation / B2B SaaS',
+    healthScore: {
+      score: 79,
+      status: 'On Track' as const,
+      motto: 'Consistent execution velocity.',
+    },
+    priorities: {
+      total: calculatedPriorities,
+      completed: calculatedDone || 4,
+      rate: calcRate,
+    },
+    financials: {
+      monthlyTarget: '₹12L',
+      achievedAmount: '₹8.8L',
+      targetRate: 73,
+      revenue: '₹8.8L',
+      burn: '₹3.6L',
+      runwayMonths: 10,
+      runwayStatus: 'Steady path to profitability.',
+    },
+    growth: {
+      leads: 680,
+      leadsChange: '+22%',
+      customers: 94,
+      customersChange: '+18%',
+      cac: '₹510',
+      cacChange: '-10%',
+      weeklyTrend: [
+        { day: 'Mon', leads: 180, customers: 24 },
+        { day: 'Tue', leads: 310, customers: 42 },
+        { day: 'Wed', leads: 450, customers: 61 },
+        { day: 'Thu', leads: 540, customers: 75 },
+        { day: 'Fri', leads: 610, customers: 83 },
+        { day: 'Sat', leads: 650, customers: 89 },
+        { day: 'Sun', leads: 680, customers: 94 },
+      ],
+    },
+    execution: {
+      milestonesCount: '7/10',
+      milestonesPercent: 70,
+      mentorRating: '8/10',
+      criticalBlockersCount: 1,
+      founderExecutionScore: 81,
+    },
+    highlights: {
+      topWins: [
+        'Weekly revenue target achieved at 73%',
+        'Product release v2.4 shipped on schedule',
+        'Customer satisfaction NPS reached 74',
+      ],
+      criticalBlockers: [
+        'Enterprise sales cycle elongated by legal review',
+      ],
+      valueSpotlight: {
+        items: [
+          'High customer retention rate',
+          'Modular architecture',
+          'Rapid onboarding workflow',
+        ],
+        bannerText: 'Modern platform built for scale.',
+      },
+    },
+    founderOfTheWeek: {
+      name: `${startupName} Team`,
+      startupName: startupName,
+      award: 'OPERATIONAL EXCELLENCE',
+      citation: 'Demonstrated exceptional sprint discipline and weekly outcome delivery.',
+      tagline: 'BOLDER FOUNDERS BRIGHTER TOMORROW',
+    },
   }
 }
 
@@ -98,12 +499,13 @@ export async function getAllTvStartups(): Promise<TvStartupSummary[]> {
   const tasks = tasksRes.data || []
   const domains = domainsRes.data || []
 
-  return (startups || []).map((s) => {
+  const mapped = (startups || []).map((s) => {
     const sPlans = plans.filter((p) => p.startup_id === s.id)
     const latestPlan = sPlans[sPlans.length - 1]
     const sTasks = tasks.filter((t) => t.startup_id === s.id)
     const sDomains = domains.filter((d) => d.startup_id === s.id)
     const slug = s.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || s.id
+    const profile = getCompanyVentureProfile(s.name, sTasks.filter(t => t.status === 'DONE').length, sTasks.length)
 
     return {
       id: s.id,
@@ -114,7 +516,17 @@ export async function getAllTvStartups(): Promise<TvStartupSummary[]> {
       planGoal: latestPlan?.goal || null,
       tasksCount: sTasks.length,
       domainsCount: sDomains.length,
+      logo_url: s.logo_url || null,
+      sector: profile.sector,
+      stage: profile.stage,
     }
+  })
+
+  // Put Bare Logic first if present
+  return mapped.sort((a, b) => {
+    if (a.name.toLowerCase().includes('bare logic')) return -1
+    if (b.name.toLowerCase().includes('bare logic')) return 1
+    return a.name.localeCompare(b.name)
   })
 }
 
@@ -128,6 +540,7 @@ export async function getTvTelemetry(idOrSlug: string): Promise<TvPayload | null
     email: string
     status: string
     created_at: string
+    logo_url?: string | null
   } | null = null
 
   const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(idOrSlug)
@@ -334,6 +747,8 @@ export async function getTvTelemetry(idOrSlug: string): Promise<TvPayload | null
     dueDate: t.due_date,
   }))
 
+  const ventureProfile = getCompanyVentureProfile(startup.name, doneTasks.length, totalTasks)
+
   return {
     timestamp: new Date().toISOString(),
     startup: {
@@ -342,7 +757,18 @@ export async function getTvTelemetry(idOrSlug: string): Promise<TvPayload | null
       email: startup.email,
       status: startup.status,
       initial: startup.name.charAt(0).toUpperCase(),
+      logo_url: startup.logo_url || null,
     },
+    stage: ventureProfile.stage,
+    sector: ventureProfile.sector,
+    healthScore: ventureProfile.healthScore,
+    priorities: ventureProfile.priorities,
+    financials: ventureProfile.financials,
+    growth: ventureProfile.growth,
+    execution: ventureProfile.execution,
+    highlights: ventureProfile.highlights,
+    founderOfTheWeek: ventureProfile.founderOfTheWeek,
+    activeBlockersList: ventureProfile.activeBlockersList || [],
     sprint: {
       id: currentPlan?.id || null,
       weekStart: currentPlan?.week_start || mondayStr,

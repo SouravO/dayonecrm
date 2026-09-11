@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server'
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { CompanyLogo } from '@/components/brand/CompanyLogo'
 
 export const metadata: Metadata = { title: 'Admin Dashboard' }
 
@@ -64,7 +65,7 @@ async function getStartupsOverview() {
   const supabase = await createClient()
   const { data } = await supabase
     .from('startups')
-    .select('id, name, status, created_at')
+    .select('id, name, status, created_at, logo_url')
     .eq('status', 'ACTIVE')
     .order('created_at', { ascending: false })
     .limit(6)
@@ -204,9 +205,7 @@ export default async function AdminDashboard() {
                       cursor: 'pointer',
                     }}
                   >
-                    <div className="avatar">
-                      {startup.name.charAt(0).toUpperCase()}
-                    </div>
+                    <CompanyLogo logoUrl={startup.logo_url} name={startup.name} size={36} />
                     <div style={{ flex: 1 }}>
                       <div
                         style={{

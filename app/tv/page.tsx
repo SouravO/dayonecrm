@@ -14,14 +14,12 @@ export const metadata: Metadata = {
 interface Props {
   searchParams: Promise<{
     company?: string
-    theme?: string
     view?: string
   }>
 }
 
 export default async function TvDirectoryPage({ searchParams }: Props) {
   const resolvedParams = await searchParams
-  const initialTheme = resolvedParams?.theme === 'cream' ? 'cream' : 'dark'
   const allStartups = await getAllTvStartups()
 
   // If user explicitly requests the directory fleet view or if no startups exist
@@ -39,6 +37,7 @@ export default async function TvDirectoryPage({ searchParams }: Props) {
           s.slug.toLowerCase() === companyQuery ||
           s.name.toLowerCase() === companyQuery
       )) ||
+    allStartups.find((s) => s.name.toLowerCase() === 'bare logic') ||
     allStartups.find((s) => s.status === 'ACTIVE') ||
     allStartups[0]
 
@@ -52,7 +51,6 @@ export default async function TvDirectoryPage({ searchParams }: Props) {
     <CompanyTvDisplay
       initialData={initialData}
       startupId={targetStartup.id}
-      initialTheme={initialTheme}
       allStartups={allStartups}
     />
   )

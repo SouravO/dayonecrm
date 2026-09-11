@@ -1,0 +1,12 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="chavaGrad" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#10B981"/>
+      <stop offset="1" stop-color="#047857"/>
+    </linearGradient>
+  </defs>
+  <rect width="120" height="120" rx="28" fill="url(#chavaGrad)"/>
+  <!-- Radiant starburst / sun -->
+  <circle cx="60" cy="60" r="16" fill="#FDE047"/>
+  <path d="M60 22V36M60 84V98M22 60H36M84 60H98M33 33L43 43M77 77L87 87M87 33L77 43M43 77L33 87" stroke="white" stroke-width="5" stroke-linecap="round"/>
+</svg>

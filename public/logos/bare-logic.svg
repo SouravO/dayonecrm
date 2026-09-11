@@ -1,0 +1,22 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Subtle rounded badge -->
+  <rect width="120" height="120" rx="24" fill="#ffffff"/>
+  <rect x="1" y="1" width="118" height="118" rx="23" stroke="#e5dfcb" stroke-width="2"/>
+  
+  <!-- 4 stacked organic crimson waves representing skincare / skin barrier layers -->
+  <!-- Wave 1 -->
+  <path d="M26 34C32 29 40 29 46 34C52 39 60 39 66 34C72 29 80 29 86 34C90 37.5 93 37 95 35" 
+        stroke="#ca2f2b" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+        
+  <!-- Wave 2 -->
+  <path d="M26 51C32 46 40 46 46 51C52 56 60 56 66 51C72 46 80 46 86 51C90 54.5 93 54 95 52" 
+        stroke="#ca2f2b" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+        
+  <!-- Wave 3 -->
+  <path d="M26 68C32 63 40 63 46 68C52 73 60 73 66 68C72 63 80 63 86 68C90 71.5 93 71 95 69" 
+        stroke="#ca2f2b" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+        
+  <!-- Wave 4 -->
+  <path d="M26 85C32 80 40 80 46 85C52 90 60 90 66 85C72 80 80 80 86 85C90 88.5 93 88 95 86" 
+        stroke="#ca2f2b" stroke-width="6.5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

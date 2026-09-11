@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server'
 import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import type { Metadata } from 'next'
+import { CompanyLogo } from '@/components/brand/CompanyLogo'
 
 export const metadata: Metadata = { title: 'Startup Detail' }
 
@@ -82,9 +83,7 @@ export default async function StartupDetailPage({ params }: Props) {
           <Link href="/admin/startups" style={{ color: 'var(--color-text-muted)', textDecoration: 'none', fontSize: 13 }}>
             ← Startups
           </Link>
-          <div className="avatar" style={{ width: 44, height: 44, fontSize: 18 }}>
-            {startup.name.charAt(0).toUpperCase()}
-          </div>
+          <CompanyLogo logoUrl={startup.logo_url} name={startup.name} size={48} />
           <div>
             <h1 className="page-title">{startup.name}</h1>
             <p className="page-subtitle">{startup.email}</p>

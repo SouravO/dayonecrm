@@ -1,0 +1,16 @@
+<svg width="120" height="120" viewBox="0 0 120 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="apexGrad" x1="0" y1="0" x2="120" y2="120" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#0EA5E9"/>
+      <stop offset="1" stop-color="#1E3A8A"/>
+    </linearGradient>
+    <linearGradient id="apexInner" x1="30" y1="30" x2="90" y2="90" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#38BDF8"/>
+      <stop offset="1" stop-color="#60A5FA"/>
+    </linearGradient>
+  </defs>
+  <rect width="120" height="120" rx="28" fill="url(#apexGrad)"/>
+  <path d="M60 22L95 86H25L60 22Z" stroke="white" stroke-width="7" stroke-linejoin="round"/>
+  <path d="M60 38L82 80H38L60 38Z" fill="url(#apexInner)"/>
+  <circle cx="60" cy="64" r="7" fill="white"/>
+</svg>

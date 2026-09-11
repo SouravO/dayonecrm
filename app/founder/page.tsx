@@ -23,6 +23,7 @@ import {
   Sparkles,
   MonitorPlay,
 } from 'lucide-react'
+import { CompanyLogo } from '@/components/brand/CompanyLogo'
 
 export const metadata: Metadata = { title: 'Founder Command Center — Day One' }
 
@@ -41,6 +42,8 @@ export default async function FounderDashboard() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const startup = (Array.isArray(member?.startup) ? member?.startup[0] : member?.startup) as Record<string, unknown> | null
   const startupId = member?.startup_id
+  const startupName = (startup?.name as string) || 'My Startup'
+  const startupLogoUrl = (startup?.logo_url as string) || null
 
   // Get current week plan
   const today = new Date().toISOString().split('T')[0]
@@ -89,62 +92,51 @@ export default async function FounderDashboard() {
   const completionRate =
     taskStats.total > 0 ? Math.round((taskStats.done / taskStats.total) * 100) : 0
 
-  const startupName = startup ? (startup.name as string) : 'My Startup'
-
   return (
     <div style={{ maxWidth: 1240, margin: '0 auto' }}>
-      {/* ── Top Executive Header ── */}
-      <div className="page-header" style={{ marginBottom: 28 }}>
-        <div>
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              fontSize: 11,
-              fontWeight: 700,
-              textTransform: 'uppercase',
-              letterSpacing: '0.8px',
-              color: 'var(--color-text-muted)',
-              marginBottom: 6,
-            }}
-          >
-            <span>Venture Studio</span>
-            <span>/</span>
-            <span style={{ color: 'var(--color-text-primary)' }}>{startupName}</span>
-            <span
-              style={{
-                display: 'inline-flex',
-                alignItems: 'center',
-                gap: 5,
-                padding: '2px 8px',
-                borderRadius: 100,
-                fontSize: 10,
-                fontWeight: 600,
-                background: '#ecfdf5',
-                color: '#065f46',
-                border: '1px solid #a7f3d0',
-                marginLeft: 4,
-              }}
-            >
+      {/* ── Top Executive Header with Company Logo ── */}
+      <div className="page-header" style={{ marginBottom: 28, alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <CompanyLogo logoUrl={startupLogoUrl} name={startupName} size={54} />
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+              <span className="badge badge-neutral" style={{ fontSize: 11, letterSpacing: '0.3px' }}>
+                Day One Studio
+              </span>
               <span
                 style={{
-                  width: 5,
-                  height: 5,
-                  borderRadius: '50%',
-                  background: '#059669',
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: 5,
+                  padding: '2px 8px',
+                  borderRadius: 100,
+                  fontSize: 10,
+                  fontWeight: 600,
+                  background: '#ecfdf5',
+                  color: '#065f46',
+                  border: '1px solid #a7f3d0',
+                  marginLeft: 4,
                 }}
-              />
-              Active Portfolio Venture
-            </span>
-          </div>
+              >
+                <span
+                  style={{
+                    width: 5,
+                    height: 5,
+                    borderRadius: '50%',
+                    background: '#059669',
+                  }}
+                />
+                Active Portfolio Venture
+              </span>
+            </div>
 
-          <h1 className="page-title" style={{ fontSize: 28, letterSpacing: '-0.6px' }}>
-            {startupName} Command Center
-          </h1>
-          <p className="page-subtitle" style={{ fontSize: 13.5 }}>
-            Real-time execution tracking, domain alignment, and weekly sprint metrics.
-          </p>
+            <h1 className="page-title" style={{ fontSize: 28, letterSpacing: '-0.6px' }}>
+              {startupName} Command Center
+            </h1>
+            <p className="page-subtitle" style={{ fontSize: 13.5 }}>
+              Real-time execution tracking, domain alignment, and weekly sprint metrics.
+            </p>
+          </div>
         </div>
 
         {/* Header Action Buttons */}

@@ -7,7 +7,6 @@ export const dynamic = 'force-dynamic'
 
 interface Props {
   params: Promise<{ id: string }>
-  searchParams: Promise<{ theme?: string }>
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -21,10 +20,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   }
 }
 
-export default async function TvPage({ params, searchParams }: Props) {
+export default async function TvPage({ params }: Props) {
   const { id } = await params
-  const resolvedSearchParams = await searchParams
-  const initialTheme = resolvedSearchParams?.theme === 'cream' ? 'cream' : 'dark'
 
   const [initialData, allStartups] = await Promise.all([
     getTvTelemetry(id),
@@ -39,7 +36,6 @@ export default async function TvPage({ params, searchParams }: Props) {
     <CompanyTvDisplay
       initialData={initialData}
       startupId={initialData.startup.id}
-      initialTheme={initialTheme}
       allStartups={allStartups}
     />
   )

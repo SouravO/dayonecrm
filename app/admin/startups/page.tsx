@@ -3,6 +3,7 @@ import Link from 'next/link'
 import type { Metadata } from 'next'
 import type { WeeklyPerformance } from '@/types'
 import { calculatePerformanceStatus } from '@/lib/performance/calculatePerformanceStatus'
+import { CompanyLogo } from '@/components/brand/CompanyLogo'
 
 export const metadata: Metadata = { title: 'Startups' }
 
@@ -93,9 +94,7 @@ export default async function StartupsPage() {
                   <tr key={startup.id}>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                        <div className="avatar avatar-sm">
-                          {startup.name.charAt(0).toUpperCase()}
-                        </div>
+                        <CompanyLogo logoUrl={startup.logo_url} name={startup.name} size={32} />
                         <div>
                           <div
                             style={{ fontWeight: 600, fontSize: 14, color: 'var(--color-text-primary)' }}

@@ -16,21 +16,21 @@ const founderNavItems = [
 export default async function FounderLayout({ children }: { children: React.ReactNode }) {
   const session = await requireFounder()
 
-  // Get startup name for sidebar
+  // Get startup name and logo for sidebar
   const supabase = await createClient()
   const { data: member } = await supabase
     .from('startup_members')
-    .select('startup_id, startup:startups(name)')
+    .select('startup_id, startup:startups(name, logo_url)')
     .eq('user_id', session.id)
     .eq('role', 'FOUNDER')
     .single()
 
-  const startupName =
-    member?.startup && !Array.isArray(member.startup)
-      ? (member.startup as { name: string }).name
-      : Array.isArray(member?.startup) && member.startup.length > 0
-      ? (member.startup[0] as { name: string }).name
-      : 'My Startup'
+  const startupObj = Array.isArray(member?.startup)
+    ? member.startup[0] as { name: string; logo_url?: string | null } | undefined
+    : member?.startup as { name: string; logo_url?: string | null } | undefined
+
+  const startupName = startupObj?.name || 'My Startup'
+  const startupLogoUrl = startupObj?.logo_url || null
 
   const navItems = [
     ...founderNavItems,
@@ -46,6 +46,7 @@ export default async function FounderLayout({ children }: { children: React.Reac
       <Sidebar
         brandLabel={startupName}
         brandSublabel="Founder Dashboard"
+        brandLogoUrl={startupLogoUrl}
         navItems={navItems}
         userName={session.full_name}
         userEmail={session.email}
