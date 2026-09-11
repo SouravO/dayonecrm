@@ -1,50 +1,59 @@
 import type { Metadata } from 'next'
-import { createAdminClient } from '@/lib/supabase/admin'
+import { CompanyTvDisplay } from '@/components/tv/CompanyTvDisplay'
 import { TvDirectoryClient } from '@/components/tv/TvDirectoryClient'
+import { getTvTelemetry, getAllTvStartups } from '@/lib/tv/telemetry'
+
+export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
-  title: 'Multi-TV Studio Control Hub — Day One',
-  description: 'Launch dedicated live mission control displays for each portfolio startup on office wall TVs.',
+  title: 'Live TV Mission Control — Day One Studio Wall',
+  description:
+    'Full-screen real-time TV telemetry wall display with multi-company swapping, sprint process dashbars, and burndown velocity.',
 }
 
-export default async function TvDirectoryPage() {
-  const supabase = createAdminClient()
+interface Props {
+  searchParams: Promise<{
+    company?: string
+    theme?: string
+    view?: string
+  }>
+}
 
-  // Fetch all startups
-  const { data: startups } = await supabase
-    .from('startups')
-    .select('*')
-    .order('name', { ascending: true })
+export default async function TvDirectoryPage({ searchParams }: Props) {
+  const resolvedParams = await searchParams
+  const initialTheme = resolvedParams?.theme === 'cream' ? 'cream' : 'dark'
+  const allStartups = await getAllTvStartups()
 
-  // Fetch weekly plans, tasks, domains
-  const [plansRes, tasksRes, domainsRes] = await Promise.all([
-    supabase.from('weekly_plans').select('startup_id, goal, week_start, week_end'),
-    supabase.from('tasks').select('startup_id, status'),
-    supabase.from('domains').select('startup_id'),
-  ])
+  // If user explicitly requests the directory fleet view or if no startups exist
+  if (resolvedParams?.view === 'directory' || allStartups.length === 0) {
+    return <TvDirectoryClient startups={allStartups} />
+  }
 
-  const plans = plansRes.data || []
-  const tasks = tasksRes.data || []
-  const domains = domainsRes.data || []
+  // Resolve target company: either query param ?company=slug/id, or first ACTIVE startup, or first startup
+  const companyQuery = resolvedParams?.company?.toLowerCase()
+  const targetStartup =
+    (companyQuery &&
+      allStartups.find(
+        (s) =>
+          s.id.toLowerCase() === companyQuery ||
+          s.slug.toLowerCase() === companyQuery ||
+          s.name.toLowerCase() === companyQuery
+      )) ||
+    allStartups.find((s) => s.status === 'ACTIVE') ||
+    allStartups[0]
 
-  const formattedStartups = (startups || []).map((s) => {
-    const sPlans = plans.filter((p) => p.startup_id === s.id)
-    const latestPlan = sPlans[sPlans.length - 1]
-    const sTasks = tasks.filter((t) => t.startup_id === s.id)
-    const sDomains = domains.filter((d) => d.startup_id === s.id)
-    const slug = s.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '') || s.id
+  const initialData = await getTvTelemetry(targetStartup.id)
 
-    return {
-      id: s.id,
-      name: s.name,
-      email: s.email,
-      status: s.status,
-      slug: slug || s.id,
-      planGoal: latestPlan?.goal || null,
-      tasksCount: sTasks.length,
-      domainsCount: sDomains.length,
-    }
-  })
+  if (!initialData) {
+    return <TvDirectoryClient startups={allStartups} />
+  }
 
-  return <TvDirectoryClient startups={formattedStartups} />
+  return (
+    <CompanyTvDisplay
+      initialData={initialData}
+      startupId={targetStartup.id}
+      initialTheme={initialTheme}
+      allStartups={allStartups}
+    />
+  )
 }

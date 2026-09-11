@@ -3,7 +3,7 @@
 import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/admin'
+import { getAdminClient } from '@/lib/supabase/admin'
 import { logActivity } from '@/features/activity/actions'
 import type { ActionState } from '@/types'
 
@@ -32,7 +32,7 @@ export async function registerStartup(
   }
 
   const { startup_name, founder_name, email, phone, password } = validated.data
-  const adminClient = createAdminClient()
+  const adminClient = getAdminClient()
 
   // 1. Create Supabase Auth user via Admin API
   // Bypasses email rate limits and auto-confirms email so admin approval controls access

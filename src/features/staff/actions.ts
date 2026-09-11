@@ -3,7 +3,7 @@
 import { z } from 'zod'
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/lib/supabase/server'
-import { createAdminClient } from '@/lib/supabase/admin'
+import { getAdminClient } from '@/lib/supabase/admin'
 import { logActivity } from '@/features/activity/actions'
 import type { ActionState } from '@/types'
 
@@ -40,7 +40,7 @@ export async function addStaffMember(
   if (!user) return { error: 'Unauthorized' }
 
   const { startup_id, full_name, email, phone, password } = validated.data
-  const adminClient = createAdminClient()
+  const adminClient = getAdminClient()
 
   // Create Supabase Auth user for staff member (bypasses email rate limits)
   const { data: authData, error: authError } = await adminClient.auth.admin.createUser({

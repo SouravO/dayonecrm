@@ -115,12 +115,17 @@ export default async function AdminDashboard() {
           <h1 className="page-title">Control Tower</h1>
           <p className="page-subtitle">Portfolio overview and real-time performance monitoring</p>
         </div>
-        {stats.pendingRegistrations > 0 && (
-          <Link href="/admin/registrations" className="btn btn-primary">
-            Review {stats.pendingRegistrations} Pending{' '}
-            {stats.pendingRegistrations === 1 ? 'Application' : 'Applications'}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <Link href="/tv" target="_blank" className="btn btn-secondary">
+            📺 Live TV Wall View
           </Link>
-        )}
+          {stats.pendingRegistrations > 0 && (
+            <Link href="/admin/registrations" className="btn btn-primary">
+              Review {stats.pendingRegistrations} Pending{' '}
+              {stats.pendingRegistrations === 1 ? 'Application' : 'Applications'}
+            </Link>
+          )}
+        </div>
       </div>
 
       {/* Stats grid */}
