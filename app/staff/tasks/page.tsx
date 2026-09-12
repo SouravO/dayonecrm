@@ -21,7 +21,7 @@ export default async function StaffTasksPage() {
 
   const today = new Date().toISOString().split('T')[0]
 
-  const [{ data: tasks }, { data: domains }, { data: weeklyPlans }, { data: currentPlan }] =
+  const [{ data: tasks }, { data: domains }, { data: weeklyPlans }, { data: staffMembers }] =
     await Promise.all([
       supabase
         .from('tasks')
@@ -31,18 +31,16 @@ export default async function StaffTasksPage() {
       supabase.from('domains').select('*').eq('startup_id', startupId),
       supabase
         .from('weekly_plans')
-        .select('id, week_start, week_end')
+        .select('id, week_start, week_end, title, goal')
         .eq('startup_id', startupId)
-        .order('week_start', { ascending: false })
-        .limit(4),
+        .order('week_start', { ascending: false }),
       supabase
-        .from('weekly_plans')
-        .select('id')
-        .eq('startup_id', startupId)
-        .lte('week_start', today)
-        .gte('week_end', today)
-        .single(),
+        .from('startup_members')
+        .select('user_id, role, profile:profiles(id, full_name, email)')
+        .eq('startup_id', startupId),
     ])
+
+  const currentPlan = weeklyPlans?.find((p) => p.week_start <= today && p.week_end >= today) || weeklyPlans?.[0]
 
   return (
     <div>
@@ -57,7 +55,7 @@ export default async function StaffTasksPage() {
         tasks={tasks || []}
         domains={domains || []}
         weeklyPlans={weeklyPlans || []}
-        staffMembers={[]}
+        staffMembers={(staffMembers as any) || []}
         isFounder={false}
         currentUserId={session!.id}
         currentPlanId={currentPlan?.id}

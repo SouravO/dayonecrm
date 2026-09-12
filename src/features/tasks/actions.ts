@@ -70,6 +70,8 @@ export async function createTask(
   revalidatePath('/founder/tasks')
   revalidatePath('/staff/tasks')
   revalidatePath('/founder/weekly-plan')
+  revalidatePath('/staff')
+  revalidatePath('/tv')
 
   return { success: 'Task created', data }
 }
@@ -85,22 +87,99 @@ export async function updateTask(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Unauthorized' }
 
+  // Fetch current task
+  const { data: existingTask } = await supabase
+    .from('tasks')
+    .select('*')
+    .eq('id', id)
+    .single()
+
+  if (!existingTask) return { error: 'Task not found' }
+
   const updates: Record<string, unknown> = {}
-  if (formData.get('title')) updates.title = formData.get('title')
-  if (formData.get('description') !== null) updates.description = formData.get('description')
-  if (formData.get('priority')) updates.priority = formData.get('priority')
-  if (formData.get('due_date')) updates.due_date = formData.get('due_date')
-  if (formData.get('assigned_to')) updates.assigned_to = formData.get('assigned_to')
-  if (formData.get('domain_id')) updates.domain_id = formData.get('domain_id')
+
+  if (formData.has('title')) {
+    const title = formData.get('title')?.toString().trim()
+    if (!title) return { error: 'Task title is required' }
+    updates.title = title
+  }
+
+  if (formData.has('description')) {
+    const desc = formData.get('description')?.toString().trim()
+    updates.description = desc || null
+  }
+
+  if (formData.has('priority')) {
+    const priority = formData.get('priority')?.toString()
+    if (priority && ['LOW', 'MEDIUM', 'HIGH'].includes(priority)) {
+      updates.priority = priority
+    }
+  }
+
+  if (formData.has('due_date')) {
+    const dueDate = formData.get('due_date')?.toString().trim()
+    updates.due_date = dueDate || null
+  }
+
+  if (formData.has('assigned_to')) {
+    const assignedTo = formData.get('assigned_to')?.toString().trim()
+    updates.assigned_to = assignedTo || null
+  }
+
+  if (formData.has('domain_id')) {
+    const domainId = formData.get('domain_id')?.toString().trim()
+    updates.domain_id = domainId || null
+  }
+
+  if (formData.has('weekly_plan_id')) {
+    const planId = formData.get('weekly_plan_id')?.toString().trim()
+    updates.weekly_plan_id = planId || null
+  }
+
+  if (formData.has('status')) {
+    const newStatus = formData.get('status')?.toString()
+    if (newStatus && ['TODO', 'IN_PROGRESS', 'DONE'].includes(newStatus)) {
+      updates.status = newStatus
+      if (newStatus === 'DONE' && existingTask.status !== 'DONE') {
+        const completedAt = new Date().toISOString()
+        updates.completed_at = completedAt
+        const effectiveDueDate = (updates.due_date as string | null) ?? existingTask.due_date
+        if (effectiveDueDate) {
+          updates.completion_status = calculateTaskCompletionStatus(completedAt, effectiveDueDate)
+        }
+      } else if (newStatus !== 'DONE') {
+        updates.completed_at = null
+        updates.completion_status = null
+      }
+    }
+  }
 
   const { error } = await supabase.from('tasks').update(updates).eq('id', id)
 
   if (error) return { error: 'Failed to update task' }
 
-  revalidatePath('/founder/tasks')
-  revalidatePath('/staff/tasks')
+  await logActivity({
+    startupId: existingTask.startup_id,
+    action: 'UPDATED_TASK',
+    entityType: 'task',
+    entityId: id,
+    metadata: { title: updates.title ?? existingTask.title },
+  })
 
-  return { success: 'Task updated' }
+  // Recalculate weekly performance if related to a weekly plan
+  const planIdToRecalc = (updates.weekly_plan_id ?? existingTask.weekly_plan_id) as string | null
+  if (planIdToRecalc) {
+    await recalculateWeeklyPerformance(existingTask.startup_id, planIdToRecalc)
+  }
+
+  revalidatePath('/founder/tasks')
+  revalidatePath('/founder/weekly-plan')
+  revalidatePath('/staff/tasks')
+  revalidatePath('/staff')
+  revalidatePath('/founder')
+  revalidatePath('/tv')
+
+  return { success: 'Task updated successfully' }
 }
 
 export async function updateTaskStatus(

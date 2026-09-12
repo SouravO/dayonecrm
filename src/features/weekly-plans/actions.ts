@@ -8,6 +8,7 @@ import type { ActionState, WeeklyPlan } from '@/types'
 
 const WeeklyPlanSchema = z.object({
   startup_id: z.string().uuid(),
+  title: z.string().optional(),
   week_start: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   week_end: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   goal: z.string().optional(),
@@ -19,6 +20,7 @@ export async function createWeeklyPlan(
 ): Promise<ActionState> {
   const validated = WeeklyPlanSchema.safeParse({
     startup_id: formData.get('startup_id'),
+    title: formData.get('title') || undefined,
     week_start: formData.get('week_start'),
     week_end: formData.get('week_end'),
     goal: formData.get('goal') || undefined,
@@ -33,7 +35,10 @@ export async function createWeeklyPlan(
   const { data, error } = await supabase
     .from('weekly_plans')
     .insert({
-      ...validated.data,
+      startup_id: validated.data.startup_id,
+      title: validated.data.title || null,
+      week_start: validated.data.week_start,
+      week_end: validated.data.week_end,
       goal: validated.data.goal || null,
       created_by: user.id,
     })
@@ -41,10 +46,7 @@ export async function createWeeklyPlan(
     .single()
 
   if (error) {
-    if (error.code === '23505') {
-      return { error: 'A weekly plan already exists for this week' }
-    }
-    return { error: 'Failed to create weekly plan' }
+    return { error: 'Failed to create weekly plan: ' + error.message }
   }
 
   await logActivity({
@@ -52,10 +54,14 @@ export async function createWeeklyPlan(
     action: 'CREATED_WEEKLY_PLAN',
     entityType: 'weekly_plan',
     entityId: data.id,
-    metadata: { week_start: validated.data.week_start, week_end: validated.data.week_end },
+    metadata: { title: validated.data.title, week_start: validated.data.week_start, week_end: validated.data.week_end },
   })
 
   revalidatePath('/founder/weekly-plan')
+  revalidatePath('/founder/tasks')
+  revalidatePath('/staff')
+  revalidatePath('/staff/tasks')
+  revalidatePath('/tv')
   return { success: 'Weekly plan created', data }
 }
 
@@ -64,20 +70,49 @@ export async function updateWeeklyPlan(
   formData: FormData
 ): Promise<ActionState> {
   const id = formData.get('id') as string
-  const goal = formData.get('goal') as string
-
   if (!id) return { error: 'Missing plan ID' }
 
   const supabase = await createClient()
+  const updates: Record<string, unknown> = {}
+  if (formData.has('title')) updates.title = formData.get('title')?.toString().trim() || null
+  if (formData.has('goal')) updates.goal = formData.get('goal')?.toString().trim() || null
+  if (formData.has('week_start')) updates.week_start = formData.get('week_start')?.toString().trim()
+  if (formData.has('week_end')) updates.week_end = formData.get('week_end')?.toString().trim()
+
   const { error } = await supabase
     .from('weekly_plans')
-    .update({ goal: goal || null })
+    .update(updates)
     .eq('id', id)
 
   if (error) return { error: 'Failed to update weekly plan' }
 
   revalidatePath('/founder/weekly-plan')
+  revalidatePath('/founder/tasks')
+  revalidatePath('/staff')
+  revalidatePath('/tv')
   return { success: 'Weekly plan updated' }
+}
+
+export async function deleteWeeklyPlan(
+  prevState: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  const id = formData.get('id') as string
+  if (!id) return { error: 'Missing plan ID' }
+
+  const supabase = await createClient()
+  const { error } = await supabase
+    .from('weekly_plans')
+    .delete()
+    .eq('id', id)
+
+  if (error) return { error: 'Failed to delete weekly plan' }
+
+  revalidatePath('/founder/weekly-plan')
+  revalidatePath('/founder/tasks')
+  revalidatePath('/staff')
+  revalidatePath('/tv')
+  return { success: 'Weekly plan deleted' }
 }
 
 export async function getCurrentWeekPlan(startupId: string): Promise<WeeklyPlan | null> {

@@ -29,14 +29,14 @@ export default async function FounderTasksPage() {
       supabase.from('domains').select('*').eq('startup_id', startupId),
       supabase
         .from('weekly_plans')
-        .select('id, week_start, week_end')
+        .select('id, week_start, week_end, title, goal')
         .eq('startup_id', startupId)
-        .order('week_start', { ascending: false })
-        .limit(4),
+        .order('week_start', { ascending: false }),
       supabase
         .from('startup_members')
-        .select('user_id, profile:profiles(id, full_name)')
-        .eq('startup_id', startupId),
+        .select('user_id, role, profile:profiles(id, full_name, email)')
+        .eq('startup_id', startupId)
+        .order('created_at', { ascending: true }),
     ])
 
   return (

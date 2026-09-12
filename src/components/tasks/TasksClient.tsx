@@ -3,18 +3,20 @@
 import { useActionState, useState } from 'react'
 import { createTask, updateTaskStatus, deleteTask } from '@/features/tasks/actions'
 import { DomainSelectWithQuickAdd } from '@/components/domains/DomainSelectWithQuickAdd'
+import { TaskEditModal, type StaffMemberOption } from '@/components/tasks/TaskEditModal'
 import type { ActionState, Task, Domain, WeeklyPlan } from '@/types'
 
 interface StaffMemberEntry {
   user_id: string
-  profile: { id: string; full_name: string } | null
+  role?: string
+  profile: { id: string; full_name: string; email?: string | null } | null
 }
 
 interface Props {
   startupId: string
   tasks: Task[]
   domains: Domain[]
-  weeklyPlans: Pick<WeeklyPlan, 'id' | 'week_start' | 'week_end'>[]
+  weeklyPlans: Pick<WeeklyPlan, 'id' | 'week_start' | 'week_end' | 'title' | 'goal'>[]
   staffMembers: StaffMemberEntry[]
   isFounder?: boolean
   currentUserId?: string
@@ -35,6 +37,7 @@ export function TasksClient({
   const [statusState, statusAction, statusPending] = useActionState<ActionState, FormData>(updateTaskStatus, {})
   const [deleteState, deleteAction, deletePending] = useActionState<ActionState, FormData>(deleteTask, {})
 
+  const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [filterStatus, setFilterStatus] = useState<string>('ALL')
   const [filterDomain, setFilterDomain] = useState<string>('ALL')
@@ -155,11 +158,16 @@ export function TasksClient({
                   <label className="label">Weekly Plan</label>
                   <select name="weekly_plan_id" className="input">
                     <option value="">None</option>
-                    {weeklyPlans.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {new Date(p.week_start + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} → {new Date(p.week_end + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                      </option>
-                    ))}
+                    {weeklyPlans.map((p) => {
+                      const startStr = new Date(p.week_start + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                      const endStr = new Date(p.week_end + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+                      const label = p.title || p.goal || 'Weekly Sprint'
+                      return (
+                        <option key={p.id} value={p.id}>
+                          {label} ({startStr} → {endStr})
+                        </option>
+                      )
+                    })}
                   </select>
                 </div>
               )}
@@ -174,11 +182,16 @@ export function TasksClient({
                 <label className="label">Assign To</label>
                 <select name="assigned_to" className="input">
                   <option value="">Unassigned</option>
-                  {staffMembers.map((m) => m.profile && (
-                    <option key={m.user_id} value={m.user_id}>
-                      {m.profile.full_name}
-                    </option>
-                  ))}
+                  {staffMembers.map((m) => {
+                    if (!m.profile) return null
+                    const roleBadge = m.role ? ` • ${m.role}` : ''
+                    const emailStr = m.profile.email ? ` (${m.profile.email})` : ''
+                    return (
+                      <option key={m.user_id} value={m.user_id}>
+                        {m.profile.full_name}{emailStr}{roleBadge}
+                      </option>
+                    )
+                  })}
                 </select>
                 {staffMembers.length === 0 && (
                   <span style={{ fontSize: 11.5, color: 'var(--color-text-muted)', marginTop: 4, display: 'block' }}>
@@ -241,13 +254,24 @@ export function TasksClient({
                       )}
                       {assignedMember?.profile && (
                         <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
-                          → {assignedMember.profile.full_name}
+                          → {assignedMember.profile.full_name} {assignedMember.profile.email ? `(${assignedMember.profile.email})` : ''}
                         </span>
                       )}
                     </div>
                   </div>
 
-                  <div style={{ display: 'flex', gap: 6, flexShrink: 0 }}>
+                  <div style={{ display: 'flex', gap: 6, flexShrink: 0, alignItems: 'center' }}>
+                    {isFounder && (
+                      <button
+                        type="button"
+                        onClick={() => setEditingTask(task)}
+                        className="btn btn-secondary btn-sm"
+                        style={{ display: 'inline-flex', alignItems: 'center', gap: 4 }}
+                        title="Edit task"
+                      >
+                        ✏️ Edit
+                      </button>
+                    )}
                     {task.status !== 'DONE' && (
                       <form action={statusAction} style={{ display: 'flex', gap: 6 }}>
                         <input type="hidden" name="task_id" value={task.id} />
@@ -264,7 +288,7 @@ export function TasksClient({
                     {isFounder && (
                       <form action={deleteAction}>
                         <input type="hidden" name="id" value={task.id} />
-                        <button type="submit" className="btn btn-ghost btn-sm btn-icon" disabled={deletePending} style={{ color: 'var(--color-danger)' }}>
+                        <button type="submit" className="btn btn-ghost btn-sm btn-icon" disabled={deletePending} style={{ color: 'var(--color-danger)' }} title="Delete task">
                           ✕
                         </button>
                       </form>
@@ -275,6 +299,17 @@ export function TasksClient({
             )
           })}
         </div>
+      )}
+
+      {editingTask && (
+        <TaskEditModal
+          task={editingTask}
+          onClose={() => setEditingTask(null)}
+          domains={domains}
+          startupId={startupId}
+          weeklyPlans={weeklyPlans}
+          staffMembers={staffMembers}
+        />
       )}
     </div>
   )

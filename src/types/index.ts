@@ -66,6 +66,7 @@ export interface Domain {
 export interface WeeklyPlan {
   id: string
   startup_id: string
+  title?: string | null
   week_start: string
   week_end: string
   goal: string | null

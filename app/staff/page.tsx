@@ -18,22 +18,27 @@ export default async function StaffDashboard() {
 
   const startupId = member?.startup_id
 
-  // Get current week plan
   const today = new Date().toISOString().split('T')[0]
-  const { data: currentPlan } = startupId
+
+  // Get weekly plans for this startup
+  const { data: weeklyPlans } = startupId
     ? await supabase
         .from('weekly_plans')
         .select('*')
         .eq('startup_id', startupId)
-        .lte('week_start', today)
-        .gte('week_end', today)
-        .single()
-    : { data: null }
+        .order('week_start', { ascending: false })
+    : { data: [] }
 
-  // Get tasks assigned to or created by this user
+  // Current plan or most recent plan
+  const currentPlan =
+    weeklyPlans?.find((p) => p.week_start <= today && p.week_end >= today) ||
+    weeklyPlans?.[0] ||
+    null
+
+  // Get tasks assigned to or created by this user, with domain
   const { data: myTasks } = await supabase
     .from('tasks')
-    .select('*')
+    .select('*, domain:domains(id, name)')
     .or(`assigned_to.eq.${session!.id},created_by.eq.${session!.id}`)
     .order('created_at', { ascending: false })
 
@@ -50,16 +55,27 @@ export default async function StaffDashboard() {
   const completionRate =
     taskStats.total > 0 ? Math.round((taskStats.done / taskStats.total) * 100) : 0
 
-  const currentWeekTasks = (myTasks || []).filter(
-    (t) => currentPlan && t.weekly_plan_id === currentPlan.id
-  )
+  const activeTasks = (myTasks || []).filter((t) => t.status !== 'DONE')
+  const completedTasks = (myTasks || []).filter((t) => t.status === 'DONE')
+
+  const statusColors: Record<string, string> = {
+    TODO: 'badge-neutral',
+    IN_PROGRESS: 'badge-info',
+    DONE: 'badge-success',
+  }
+
+  const priorityColors: Record<string, string> = {
+    LOW: 'badge-neutral',
+    MEDIUM: 'badge-warning',
+    HIGH: 'badge-danger',
+  }
 
   return (
     <div>
       <div className="page-header">
         <div>
           <h1 className="page-title">Hey, {session!.full_name.split(' ')[0]} 👋</h1>
-          <p className="page-subtitle">Here&apos;s your progress this week</p>
+          <p className="page-subtitle">Here&apos;s your deliverables and sprint progress</p>
         </div>
         <Link href="/staff/tasks" className="btn btn-primary">
           View All Tasks
@@ -87,103 +103,167 @@ export default async function StaffDashboard() {
       </div>
 
       <div className="grid-2">
-        {/* Current week */}
+        {/* Assigned Deliverables */}
         <div className="card">
-          <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 20 }}>Current Week</h2>
-          {currentPlan ? (
-            <>
-              <div style={{ fontSize: 13, color: 'var(--color-text-muted)', marginBottom: 8 }}>
-                {new Date(currentPlan.week_start + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} →{' '}
-                {new Date(currentPlan.week_end + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-              </div>
-              {currentPlan.goal && (
-                <div style={{ fontSize: 15, color: 'var(--color-text-secondary)', fontStyle: 'italic', marginBottom: 16 }}>
-                  "{currentPlan.goal}"
-                </div>
-              )}
-              <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: 12 }}>
-                MY TASKS THIS WEEK
-              </div>
-              {currentWeekTasks.length === 0 ? (
-                <p style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>No tasks assigned this week</p>
-              ) : (
-                currentWeekTasks.slice(0, 5).map((task) => (
-                  <div
-                    key={task.id}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 10,
-                      padding: '8px 0',
-                      borderBottom: '1px solid var(--color-border-subtle)',
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: 8,
-                        height: 8,
-                        borderRadius: '50%',
-                        flexShrink: 0,
-                        background:
-                          task.status === 'DONE'
-                            ? 'var(--color-success)'
-                            : task.status === 'IN_PROGRESS'
-                            ? 'var(--color-info)'
-                            : 'var(--color-border)',
-                      }}
-                    />
-                    <span style={{ fontSize: 13, color: task.status === 'DONE' ? 'var(--color-text-muted)' : 'var(--color-text-secondary)', flex: 1, textDecoration: task.status === 'DONE' ? 'line-through' : 'none' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <h2 style={{ fontSize: 16, fontWeight: 700, margin: 0 }}>My Active Deliverables ({activeTasks.length})</h2>
+            <Link href="/staff/tasks" style={{ fontSize: 12.5, color: 'var(--color-brand)', fontWeight: 600 }}>
+              Manage →
+            </Link>
+          </div>
+
+          {activeTasks.length === 0 ? (
+            <div className="empty-state" style={{ padding: '24px 0', textAlign: 'center' }}>
+              <div style={{ fontSize: 28, marginBottom: 8 }}>🎉</div>
+              <p style={{ fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: 4 }}>
+                All caught up!
+              </p>
+              <p style={{ fontSize: 12.5, color: 'var(--color-text-muted)' }}>
+                You have no pending tasks assigned right now.
+              </p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+              {activeTasks.slice(0, 8).map((task) => (
+                <div
+                  key={task.id}
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 6,
+                    padding: '10px 12px',
+                    borderRadius: 8,
+                    background: 'var(--color-surface, #1e293b)',
+                    border: '1px solid var(--color-border)',
+                  }}
+                >
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
+                    <span style={{ fontSize: 13.5, fontWeight: 600, color: 'var(--color-text-primary)' }}>
                       {task.title}
                     </span>
-                    {task.completion_status && (
-                      <span className={`badge ${task.completion_status === 'EARLY' ? 'badge-success' : task.completion_status === 'ON_TIME' ? 'badge-info' : 'badge-warning'}`} style={{ fontSize: 10 }}>
-                        {task.completion_status}
+                    <span className={`badge ${statusColors[task.status] || 'badge-neutral'}`} style={{ fontSize: 10 }}>
+                      {task.status}
+                    </span>
+                  </div>
+
+                  <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
+                    <span className={`badge ${priorityColors[task.priority] || 'badge-neutral'}`} style={{ fontSize: 10 }}>
+                      {task.priority}
+                    </span>
+                    {(task as any).domain?.name && (
+                      <span className="badge badge-info" style={{ fontSize: 10 }}>
+                        {(task as any).domain.name}
+                      </span>
+                    )}
+                    {task.due_date && (
+                      <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
+                        Due {new Date(task.due_date + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                       </span>
                     )}
                   </div>
-                ))
-              )}
-            </>
-          ) : (
-            <div className="empty-state" style={{ padding: '20px 0' }}>
-              <p>No weekly plan this week</p>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {completedTasks.length > 0 && (
+            <div style={{ marginTop: 24, paddingTop: 16, borderTop: '1px solid var(--color-border-subtle)' }}>
+              <div style={{ fontSize: 12.5, fontWeight: 600, color: 'var(--color-text-muted)', marginBottom: 8, textTransform: 'uppercase' }}>
+                Recently Completed ({completedTasks.length})
+              </div>
+              {completedTasks.slice(0, 3).map((task) => (
+                <div
+                  key={task.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '6px 0',
+                    fontSize: 13,
+                    color: 'var(--color-text-muted)',
+                  }}
+                >
+                  <span style={{ color: 'var(--color-success)' }}>✓</span>
+                  <span style={{ textDecoration: 'line-through', flex: 1 }}>{task.title}</span>
+                  {task.completion_status && (
+                    <span className={`badge ${task.completion_status === 'EARLY' ? 'badge-success' : task.completion_status === 'ON_TIME' ? 'badge-info' : 'badge-warning'}`} style={{ fontSize: 9 }}>
+                      {task.completion_status}
+                    </span>
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </div>
 
-        {/* Completion breakdown */}
-        <div className="card">
-          <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 20 }}>My Performance</h2>
-          <div style={{ marginBottom: 20 }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
-              <span style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>Overall Completion</span>
-              <span style={{ fontSize: 13, fontWeight: 700 }}>{completionRate}%</span>
-            </div>
-            <div className="progress-bar" style={{ height: 8 }}>
-              <div
-                className="progress-fill"
-                style={{
-                  width: `${completionRate}%`,
-                  background: completionRate >= 70 ? 'var(--color-success)' : 'var(--color-warning)',
-                }}
-              />
-            </div>
+        {/* Current / Active Weekly Plan & Performance */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
+          <div className="card">
+            <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 16 }}>Sprint Focus</h2>
+            {currentPlan ? (
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--color-text-primary)' }}>
+                    {currentPlan.title || 'Weekly Sprint'}
+                  </span>
+                  {today >= currentPlan.week_start && today <= currentPlan.week_end ? (
+                    <span className="badge badge-success" style={{ fontSize: 10 }}>Current</span>
+                  ) : today < currentPlan.week_start ? (
+                    <span className="badge badge-info" style={{ fontSize: 10 }}>Upcoming</span>
+                  ) : (
+                    <span className="badge badge-neutral" style={{ fontSize: 10 }}>Recent</span>
+                  )}
+                </div>
+                <div style={{ fontSize: 12.5, color: 'var(--color-text-muted)', marginBottom: 12 }}>
+                  📅 {new Date(currentPlan.week_start + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} →{' '}
+                  {new Date(currentPlan.week_end + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                </div>
+                {currentPlan.goal && (
+                  <div style={{ fontSize: 14, color: 'var(--color-text-secondary)', fontStyle: 'italic', padding: '10px 12px', background: 'var(--color-surface, #1e293b)', borderRadius: 8, border: '1px solid var(--color-border)' }}>
+                    &ldquo;{currentPlan.goal}&rdquo;
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="empty-state" style={{ padding: '20px 0' }}>
+                <p>No sprint or weekly plan active yet</p>
+              </div>
+            )}
           </div>
-          {[
-            { label: '⚡ Early', value: taskStats.early, color: 'var(--color-success)', badge: 'badge-success' },
-            { label: '🎯 On-Time', value: taskStats.onTime, color: 'var(--color-info)', badge: 'badge-info' },
-            { label: '⏰ Late', value: taskStats.late, color: 'var(--color-warning)', badge: 'badge-warning' },
-          ].map((item) => (
-            <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid var(--color-border-subtle)' }}>
-              <span style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>{item.label}</span>
-              <span className={`badge ${item.badge}`}>{item.value} tasks</span>
-            </div>
-          ))}
 
-          <div style={{ marginTop: 20 }}>
-            <Link href="/staff/tasks" className="btn btn-secondary btn-sm" style={{ width: '100%', justifyContent: 'center' }}>
-              View All My Tasks →
-            </Link>
+          <div className="card">
+            <h2 style={{ fontSize: 16, fontWeight: 700, marginBottom: 20 }}>My Performance</h2>
+            <div style={{ marginBottom: 20 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6 }}>
+                <span style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>Overall Completion</span>
+                <span style={{ fontSize: 13, fontWeight: 700 }}>{completionRate}%</span>
+              </div>
+              <div className="progress-bar" style={{ height: 8 }}>
+                <div
+                  className="progress-fill"
+                  style={{
+                    width: `${completionRate}%`,
+                    background: completionRate >= 70 ? 'var(--color-success)' : 'var(--color-warning)',
+                  }}
+                />
+              </div>
+            </div>
+            {[
+              { label: '⚡ Early', value: taskStats.early, color: 'var(--color-success)', badge: 'badge-success' },
+              { label: '🎯 On-Time', value: taskStats.onTime, color: 'var(--color-info)', badge: 'badge-info' },
+              { label: '⏰ Late', value: taskStats.late, color: 'var(--color-warning)', badge: 'badge-warning' },
+            ].map((item) => (
+              <div key={item.label} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '10px 0', borderBottom: '1px solid var(--color-border-subtle)' }}>
+                <span style={{ fontSize: 13, color: 'var(--color-text-secondary)' }}>{item.label}</span>
+                <span className={`badge ${item.badge}`}>{item.value} tasks</span>
+              </div>
+            ))}
+
+            <div style={{ marginTop: 20 }}>
+              <Link href="/staff/tasks" className="btn btn-secondary btn-sm" style={{ width: '100%', justifyContent: 'center' }}>
+                View All My Tasks →
+              </Link>
+            </div>
           </div>
         </div>
       </div>

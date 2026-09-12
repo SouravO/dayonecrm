@@ -36,6 +36,11 @@ export function DomainSelectWithQuickAdd({
     setDomainList(initialDomains)
   }, [initialDomains])
 
+  // Sync if defaultValue changes externally (e.g. switching edit modal task)
+  useEffect(() => {
+    setSelectedId(defaultValue)
+  }, [defaultValue])
+
   useEffect(() => {
     if (isAdding && inputRef.current) {
       inputRef.current.focus()
