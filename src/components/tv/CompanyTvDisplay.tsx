@@ -477,6 +477,8 @@ export function CompanyTvDisplay({
 
   const activeStartupObj = allStartups.find((s) => s.id === currentStartupId || s.name.toLowerCase() === startup.name.toLowerCase())
   const activeLogoUrl = activeStartupObj?.logo_url || (startup as any).logo_url
+  const activeSector = data.sector || activeStartupObj?.sector || 'Skincare / Beauty Tech'
+  const activeStage = data.stage || activeStartupObj?.stage || 'MVP'
 
   return (
     <div
@@ -974,13 +976,13 @@ export function CompanyTvDisplay({
           transition: 'opacity 0.2s ease-in-out',
         }}
       >
-        {/* ── Sprint North Star Banner (Matching Reference Image) ── */}
+        {/* ── 1. Executive Spotlight Company Banner (High Visibility On TV) ── */}
         <div
           style={{
             background: colors.cardBg,
             border: `1px solid ${colors.cardBorder}`,
             borderRadius: 16,
-            padding: '10px 18px',
+            padding: '8px 20px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
@@ -989,52 +991,118 @@ export function CompanyTvDisplay({
             position: 'relative',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 16, flex: 1, minWidth: 0 }}>
+            {/* Prominent High-Visibility Logo Box */}
             <div
               style={{
-                width: 38,
-                height: 38,
-                borderRadius: 10,
+                width: 58,
+                height: 58,
+                borderRadius: 14,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexShrink: 0,
-                background: '#fff',
-                border: `1px solid ${colors.cardBorder}`,
+                background: '#ffffff',
+                border: '1.5px solid rgba(0, 0, 0, 0.08)',
+                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.06)',
+                overflow: 'hidden',
               }}
             >
               <CompanyLogo
                 logoUrl={activeLogoUrl}
                 name={startup.name}
-                size={34}
+                size={54}
               />
             </div>
 
+            {/* Company Identification & North Star Hierarchy */}
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div
-                style={{
-                  fontSize: 10,
-                  fontWeight: 800,
-                  textTransform: 'uppercase',
-                  letterSpacing: '1px',
-                  color: colors.brandRed,
-                  marginBottom: 2,
-                }}
-              >
-                Sprint North Star Objective — {startup.name}
+              {/* Row 1: Commanding Company Name & Sector Tags */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 2, flexWrap: 'wrap' }}>
+                <h1
+                  style={{
+                    fontSize: 22,
+                    fontWeight: 900,
+                    letterSpacing: '-0.4px',
+                    color: colors.textPrimary,
+                    margin: 0,
+                    lineHeight: 1.15,
+                  }}
+                >
+                  {startup.name}
+                </h1>
+                <span
+                  style={{
+                    fontSize: 10.5,
+                    fontWeight: 800,
+                    padding: '2px 8px',
+                    borderRadius: 6,
+                    background: 'rgba(202, 47, 43, 0.08)',
+                    color: colors.brandRed,
+                    border: '1px solid rgba(202, 47, 43, 0.22)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.6px',
+                  }}
+                >
+                  {activeSector}
+                </span>
+                <span
+                  style={{
+                    fontSize: 10.5,
+                    fontWeight: 700,
+                    padding: '2px 7px',
+                    borderRadius: 6,
+                    background: colors.subtleCard,
+                    color: colors.textSecondary,
+                    border: `1px solid ${colors.cardBorder}`,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.5px',
+                  }}
+                >
+                  STAGE: {activeStage}
+                </span>
               </div>
+
+              {/* Row 2: Sprint North Star Objective */}
               <div
-                className="font-serif-italic"
                 style={{
-                  fontSize: 15,
-                  fontWeight: 600,
-                  color: colors.textPrimary,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
                 }}
               >
-                &ldquo;{sprint.goal}&rdquo;
+                <span
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 900,
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.8px',
+                    color: colors.brandRed,
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 4,
+                    flexShrink: 0,
+                  }}
+                >
+                  <Target size={12} />
+                  Sprint North Star:
+                </span>
+                <span
+                  className="font-serif-italic"
+                  style={{
+                    fontSize: 14.5,
+                    fontWeight: 600,
+                    color: colors.textPrimary,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  &ldquo;{sprint.goal}&rdquo;
+                </span>
               </div>
             </div>
           </div>

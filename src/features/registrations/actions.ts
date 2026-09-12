@@ -13,6 +13,7 @@ const RegisterSchema = z.object({
   email: z.string().email('Invalid email address'),
   phone: z.string().optional(),
   password: z.string().min(8, 'Password must be at least 8 characters'),
+  logo_url: z.string().optional(),
 })
 
 export async function registerStartup(
@@ -25,14 +26,56 @@ export async function registerStartup(
     email: formData.get('email'),
     phone: formData.get('phone') || undefined,
     password: formData.get('password'),
+    logo_url: (formData.get('logo_url') as string)?.trim() || undefined,
   })
 
   if (!validated.success) {
     return { error: validated.error.errors[0].message }
   }
 
-  const { startup_name, founder_name, email, phone, password } = validated.data
+  const { startup_name, founder_name, email, phone, password, logo_url } = validated.data
   const adminClient = getAdminClient()
+
+  // Process logo file upload if provided
+  let finalLogoUrl: string | null = logo_url || null
+  const logoFile = formData.get('logo_file') as File | null
+
+  if (logoFile && logoFile.size > 0 && logoFile.name) {
+    const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/svg+xml', 'image/gif']
+    if (!allowedTypes.includes(logoFile.type)) {
+      return { error: 'Invalid logo format. Please upload a PNG, JPEG, SVG, or WebP image.' }
+    }
+    if (logoFile.size > 5 * 1024 * 1024) {
+      return { error: 'Logo file size exceeds 5MB limit.' }
+    }
+
+    try {
+      const ext = logoFile.name.split('.').pop()?.toLowerCase() || 'png'
+      const sanitizedName = startup_name.toLowerCase().replace(/[^a-z0-9]/g, '-').slice(0, 24)
+      const fileName = `${sanitizedName}-${Date.now()}.${ext}`
+      const buffer = Buffer.from(await logoFile.arrayBuffer())
+
+      const { error: uploadError } = await adminClient.storage
+        .from('company-logos')
+        .upload(fileName, buffer, {
+          contentType: logoFile.type || 'image/png',
+          upsert: true,
+        })
+
+      if (!uploadError) {
+        const { data: pubUrlData } = adminClient.storage
+          .from('company-logos')
+          .getPublicUrl(fileName)
+        if (pubUrlData?.publicUrl) {
+          finalLogoUrl = pubUrlData.publicUrl
+        }
+      } else {
+        console.error('Logo upload error:', uploadError)
+      }
+    } catch (err) {
+      console.error('Error processing logo upload:', err)
+    }
+  }
 
   // 1. Create Supabase Auth user via Admin API
   // Bypasses email rate limits and auto-confirms email so admin approval controls access
@@ -71,6 +114,7 @@ export async function registerStartup(
       name: startup_name,
       email,
       phone: phone || null,
+      logo_url: finalLogoUrl,
       status: 'PENDING',
     })
     .select()

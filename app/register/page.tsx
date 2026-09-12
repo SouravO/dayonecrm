@@ -1,9 +1,11 @@
 'use client'
 
-import { useActionState } from 'react'
+import { useActionState, useState, useRef } from 'react'
 import Link from 'next/link'
 import { registerStartup } from '@/features/registrations/actions'
 import { Logo } from '@/components/brand/Logo'
+import { CompanyLogo } from '@/components/brand/CompanyLogo'
+import { Upload, X, Image as ImageIcon, Link2 } from 'lucide-react'
 import type { ActionState } from '@/types'
 
 export default function RegisterPage() {
@@ -11,6 +13,31 @@ export default function RegisterPage() {
     registerStartup,
     {}
   )
+  const [startupName, setStartupName] = useState('')
+  const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const [logoUrlInput, setLogoUrlInput] = useState('')
+  const [isUrlMode, setIsUrlMode] = useState(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Logo image must be under 5MB')
+        return
+      }
+      const previewUrl = URL.createObjectURL(file)
+      setLogoPreview(previewUrl)
+    }
+  }
+
+  const handleClearLogo = () => {
+    setLogoPreview(null)
+    setLogoUrlInput('')
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
 
   if (state?.success) {
     return (
@@ -97,7 +124,11 @@ export default function RegisterPage() {
             </div>
           )}
 
-          <form action={formAction} style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+          <form
+            action={formAction}
+            encType="multipart/form-data"
+            style={{ display: 'flex', flexDirection: 'column', gap: 18 }}
+          >
             <div className="form-group">
               <label htmlFor="startup_name" className="label">
                 Startup Name *
@@ -108,7 +139,155 @@ export default function RegisterPage() {
                 className="input"
                 placeholder="e.g. Acme Inc."
                 required
+                value={startupName}
+                onChange={(e) => setStartupName(e.target.value)}
               />
+            </div>
+
+            {/* Company Logo Section */}
+            <div
+              style={{
+                border: '1px dashed var(--color-border)',
+                borderRadius: 12,
+                padding: '14px 16px',
+                background: 'var(--color-surface)',
+              }}
+            >
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  marginBottom: 10,
+                }}
+              >
+                <label className="label" style={{ margin: 0, fontWeight: 700, fontSize: 13 }}>
+                  Company Logo{' '}
+                  <span style={{ fontWeight: 400, color: 'var(--color-text-muted)' }}>
+                    (Optional)
+                  </span>
+                </label>
+                <button
+                  type="button"
+                  onClick={() => setIsUrlMode(!isUrlMode)}
+                  style={{
+                    background: 'none',
+                    border: 'none',
+                    color: 'var(--color-brand)',
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    padding: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 4,
+                  }}
+                >
+                  {isUrlMode ? (
+                    <>
+                      <Upload size={13} /> Upload File
+                    </>
+                  ) : (
+                    <>
+                      <Link2 size={13} /> Paste Image URL
+                    </>
+                  )}
+                </button>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                {/* Logo Live Preview */}
+                <div style={{ flexShrink: 0 }}>
+                  <CompanyLogo
+                    logoUrl={logoPreview || (isUrlMode && logoUrlInput ? logoUrlInput : null)}
+                    name={startupName || 'Startup'}
+                    size={52}
+                  />
+                </div>
+
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  {!isUrlMode ? (
+                    <div>
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        name="logo_file"
+                        id="logo_file"
+                        accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                        onChange={handleFileChange}
+                        style={{ display: 'none' }}
+                      />
+                      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="btn btn-secondary"
+                          style={{
+                            fontSize: 12,
+                            padding: '6px 12px',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: 6,
+                          }}
+                        >
+                          <Upload size={14} />
+                          {logoPreview ? 'Change Logo' : 'Upload Logo'}
+                        </button>
+                        {(logoPreview || logoUrlInput) && (
+                          <button
+                            type="button"
+                            onClick={handleClearLogo}
+                            style={{
+                              background: 'none',
+                              border: 'none',
+                              color: 'var(--color-text-muted)',
+                              fontSize: 12,
+                              cursor: 'pointer',
+                              padding: '4px 8px',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 4,
+                            }}
+                          >
+                            <X size={13} /> Clear
+                          </button>
+                        )}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: 11,
+                          color: 'var(--color-text-muted)',
+                          marginTop: 5,
+                        }}
+                      >
+                        PNG, JPG, SVG or WebP. Displayed on the live TV showcase.
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <input
+                        name="logo_url"
+                        type="url"
+                        className="input"
+                        placeholder="https://example.com/logo.png"
+                        value={logoUrlInput}
+                        onChange={(e) => setLogoUrlInput(e.target.value)}
+                        style={{ fontSize: 13, padding: '7px 10px' }}
+                      />
+                      <div
+                        style={{
+                          fontSize: 11,
+                          color: 'var(--color-text-muted)',
+                          marginTop: 4,
+                        }}
+                      >
+                        Public image link for your company logo mark.
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
 
             <div className="form-group">
