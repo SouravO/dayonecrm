@@ -4,6 +4,7 @@ import { useActionState, useState } from 'react'
 import { createWeeklyPlan, updateWeeklyPlan } from '@/features/weekly-plans/actions'
 import type { ActionState, WeeklyPlan, Domain, Task } from '@/types'
 import { createTask, updateTaskStatus } from '@/features/tasks/actions'
+import { DomainSelectWithQuickAdd } from '@/components/domains/DomainSelectWithQuickAdd'
 
 interface Props {
   startupId: string
@@ -151,15 +152,10 @@ export function WeeklyPlanClient({ startupId, currentPlan, domains, tasks }: Pro
                   <input name="title" className="input" placeholder="Task title" required />
                 </div>
                 <div className="grid-2">
-                  <div className="form-group">
-                    <label className="label">Domain</label>
-                    <select name="domain_id" className="input">
-                      <option value="">No domain</option>
-                      {domains.map((d) => (
-                        <option key={d.id} value={d.id}>{d.name}</option>
-                      ))}
-                    </select>
-                  </div>
+                  <DomainSelectWithQuickAdd
+                    startupId={startupId}
+                    initialDomains={domains}
+                  />
                   <div className="form-group">
                     <label className="label">Priority</label>
                     <select name="priority" className="input">

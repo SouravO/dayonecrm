@@ -2,6 +2,7 @@
 
 import { useActionState, useState } from 'react'
 import { createTask, updateTaskStatus, deleteTask } from '@/features/tasks/actions'
+import { DomainSelectWithQuickAdd } from '@/components/domains/DomainSelectWithQuickAdd'
 import type { ActionState, Task, Domain, WeeklyPlan } from '@/types'
 
 interface StaffMemberEntry {
@@ -134,13 +135,10 @@ export function TasksClient({
             </div>
 
             <div className="grid-2">
-              <div className="form-group">
-                <label className="label">Domain</label>
-                <select name="domain_id" className="input">
-                  <option value="">No domain</option>
-                  {domains.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
-                </select>
-              </div>
+              <DomainSelectWithQuickAdd
+                startupId={startupId}
+                initialDomains={domains}
+              />
               <div className="form-group">
                 <label className="label">Priority</label>
                 <select name="priority" className="input">
