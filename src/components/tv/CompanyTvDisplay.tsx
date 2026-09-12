@@ -479,6 +479,14 @@ export function CompanyTvDisplay({
   const activeLogoUrl = activeStartupObj?.logo_url || (startup as any).logo_url
   const activeSector = data.sector || activeStartupObj?.sector || 'Skincare / Beauty Tech'
   const activeStage = data.stage || activeStartupObj?.stage || 'MVP'
+  const healthScore = data.healthScore || { score: 78, status: 'On Track' }
+  const blockersAnalysis = data.blockersAnalysis || {
+    totalLaggingCount: 0,
+    criticalBlockers: [],
+    laggingDomains: [],
+  }
+  const criticalBlockers = blockersAnalysis.criticalBlockers || []
+  const laggingDomains = blockersAnalysis.laggingDomains || []
 
   return (
     <div
@@ -1109,6 +1117,61 @@ export function CompanyTvDisplay({
 
           {/* Sprint Details Chips matching reference */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+            {/* High-Visibility Numeric Health Score Badge */}
+            <div
+              style={{
+                padding: '4px 12px',
+                borderRadius: 100,
+                background:
+                  healthScore.score >= 70
+                    ? 'rgba(16, 185, 129, 0.09)'
+                    : healthScore.score >= 50
+                    ? 'rgba(245, 158, 11, 0.1)'
+                    : 'rgba(202, 47, 43, 0.1)',
+                color:
+                  healthScore.score >= 70
+                    ? '#059669'
+                    : healthScore.score >= 50
+                    ? '#d97706'
+                    : colors.brandRed,
+                border: `1px solid ${
+                  healthScore.score >= 70
+                    ? 'rgba(16, 185, 129, 0.25)'
+                    : healthScore.score >= 50
+                    ? 'rgba(245, 158, 11, 0.3)'
+                    : 'rgba(202, 47, 43, 0.25)'
+                }`,
+                fontSize: 11,
+                fontWeight: 900,
+                letterSpacing: '0.5px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+              }}
+            >
+              <span style={{ fontSize: 9.5, fontWeight: 900, color: colors.textMuted, letterSpacing: '0.8px' }}>HEALTH:</span>
+              <span style={{ fontSize: 13, fontWeight: 900 }}>
+                {healthScore.score}
+                <span style={{ fontSize: 9.5, opacity: 0.7 }}>/100</span>
+              </span>
+              <span
+                style={{
+                  width: 5,
+                  height: 5,
+                  borderRadius: '50%',
+                  background:
+                    healthScore.score >= 70
+                      ? '#059669'
+                      : healthScore.score >= 50
+                      ? '#d97706'
+                      : colors.brandRed,
+                }}
+              />
+              <span style={{ textTransform: 'uppercase', fontSize: 10, fontWeight: 800 }}>
+                {healthScore.status}
+              </span>
+            </div>
+
             <div
               style={{
                 padding: '4px 12px',
@@ -1340,7 +1403,7 @@ export function CompanyTvDisplay({
             flexShrink: 0,
           }}
         >
-          {/* Tile 1: Sprint Completion Percentage with Circular Gauge */}
+          {/* Tile 1: Venture Health Score (Numeric 0-100 derived from Todo KPIs) */}
           <div
             style={{
               background: colors.cardBg,
@@ -1355,17 +1418,48 @@ export function CompanyTvDisplay({
           >
             <div>
               <div style={{ fontSize: 10, fontWeight: 800, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
-                Sprint Completion
+                Venture Health
               </div>
-              <div style={{ fontSize: 32, fontWeight: 900, letterSpacing: '-1px', color: colors.brandRed, lineHeight: 1.1, marginTop: 3 }}>
-                {metrics.completionRate}%
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: 3, marginTop: 3 }}>
+                <span
+                  style={{
+                    fontSize: 32,
+                    fontWeight: 900,
+                    letterSpacing: '-1px',
+                    color:
+                      healthScore.score >= 70
+                        ? '#059669'
+                        : healthScore.score >= 50
+                        ? '#d97706'
+                        : colors.brandRed,
+                    lineHeight: 1.1,
+                  }}
+                >
+                  {healthScore.score}
+                </span>
+                <span style={{ fontSize: 13, fontWeight: 700, color: colors.textMuted }}>/100</span>
               </div>
-              <div style={{ fontSize: 10.5, color: colors.textSecondary, marginTop: 3 }}>
-                {metrics.doneTasks} of {metrics.totalTasks} Tasks Done
+              <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginTop: 3 }}>
+                <span
+                  style={{
+                    width: 6,
+                    height: 6,
+                    borderRadius: '50%',
+                    background:
+                      healthScore.score >= 70
+                        ? '#059669'
+                        : healthScore.score >= 50
+                        ? '#d97706'
+                        : colors.brandRed,
+                  }}
+                />
+                <span style={{ fontSize: 10.5, fontWeight: 800, textTransform: 'uppercase', color: colors.textSecondary }}>
+                  {healthScore.status}
+                </span>
               </div>
             </div>
 
-            {/* Circular Progress Ring in brand red */}
+            {/* Circular Gauge Ring */}
             <div style={{ position: 'relative', width: 44, height: 44, flexShrink: 0 }}>
               <svg width="44" height="44" viewBox="0 0 36 36">
                 <path
@@ -1377,9 +1471,15 @@ export function CompanyTvDisplay({
                 <path
                   d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                   fill="none"
-                  stroke={colors.brandRed}
+                  stroke={
+                    healthScore.score >= 70
+                      ? '#059669'
+                      : healthScore.score >= 50
+                      ? '#d97706'
+                      : colors.brandRed
+                  }
                   strokeWidth="3.8"
-                  strokeDasharray={`${metrics.completionRate}, 100`}
+                  strokeDasharray={`${healthScore.score}, 100`}
                 />
               </svg>
               <div
@@ -1391,15 +1491,44 @@ export function CompanyTvDisplay({
                   justifyContent: 'center',
                   fontSize: 9.5,
                   fontWeight: 900,
-                  color: colors.brandRed,
+                  color:
+                    healthScore.score >= 70
+                      ? '#059669'
+                      : healthScore.score >= 50
+                      ? '#d97706'
+                      : colors.brandRed,
                 }}
               >
-                {metrics.completionRate}%
+                <Activity size={16} />
               </div>
             </div>
           </div>
 
-          {/* Tile 2: Active Deliverables */}
+          {/* Tile 2: Sprint Completion */}
+          <div
+            style={{
+              background: colors.cardBg,
+              border: `1px solid ${colors.cardBorder}`,
+              borderRadius: 16,
+              padding: '12px 16px',
+              boxShadow: colors.cardShadow,
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ fontSize: 10, fontWeight: 800, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                Sprint Completion
+              </div>
+              <Target className="w-4 h-4 text-red-600" />
+            </div>
+            <div style={{ fontSize: 32, fontWeight: 900, letterSpacing: '-1px', color: colors.brandRed, lineHeight: 1.1, marginTop: 3 }}>
+              {metrics.completionRate}%
+            </div>
+            <div style={{ fontSize: 10.5, color: colors.textSecondary, marginTop: 3 }}>
+              {metrics.doneTasks} of {metrics.totalTasks} Tasks Shipped
+            </div>
+          </div>
+
+          {/* Tile 3: Active Execution */}
           <div
             style={{
               background: colors.cardBg,
@@ -1413,9 +1542,9 @@ export function CompanyTvDisplay({
               <div style={{ fontSize: 10, fontWeight: 800, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
                 Active Execution
               </div>
-              <Clock className="w-4 h-4 text-red-600" />
+              <Clock className="w-4 h-4 text-orange-600" />
             </div>
-            <div style={{ fontSize: 32, fontWeight: 900, letterSpacing: '-1px', color: colors.brandRed, lineHeight: 1.1, marginTop: 3 }}>
+            <div style={{ fontSize: 32, fontWeight: 900, letterSpacing: '-1px', color: '#ea580c', lineHeight: 1.1, marginTop: 3 }}>
               {metrics.inProgressTasks}
             </div>
             <div style={{ fontSize: 10.5, color: colors.textSecondary, marginTop: 3 }}>
@@ -1423,11 +1552,11 @@ export function CompanyTvDisplay({
             </div>
           </div>
 
-          {/* Tile 3: Early & On-Time Velocity */}
+          {/* Tile 4: Critical Blockers & Lagging Items */}
           <div
             style={{
               background: colors.cardBg,
-              border: `1px solid ${colors.cardBorder}`,
+              border: `1px solid ${criticalBlockers.length > 0 ? 'rgba(202, 47, 43, 0.3)' : colors.cardBorder}`,
               borderRadius: 16,
               padding: '12px 16px',
               boxShadow: colors.cardShadow,
@@ -1435,19 +1564,39 @@ export function CompanyTvDisplay({
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <div style={{ fontSize: 10, fontWeight: 800, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
-                Early Deliveries
+                Critical Blockers
               </div>
-              <Zap className="w-4 h-4 text-emerald-600" />
+              <AlertTriangle
+                className={`w-4 h-4 ${criticalBlockers.length > 0 ? 'text-red-600' : 'text-emerald-600'}`}
+              />
             </div>
-            <div style={{ fontSize: 32, fontWeight: 900, letterSpacing: '-1px', color: '#15803d', lineHeight: 1.1, marginTop: 3 }}>
-              {metrics.earlyCount}
+            <div
+              style={{
+                fontSize: 32,
+                fontWeight: 900,
+                letterSpacing: '-1px',
+                color: criticalBlockers.length > 0 ? colors.brandRed : '#059669',
+                lineHeight: 1.1,
+                marginTop: 3,
+              }}
+            >
+              {criticalBlockers.length}
             </div>
-            <div style={{ fontSize: 10.5, color: colors.textSecondary, marginTop: 3 }}>
-              +{metrics.onTimeCount} On-Time Completions
+            <div
+              style={{
+                fontSize: 10.5,
+                color: criticalBlockers.length > 0 ? colors.brandRed : '#059669',
+                fontWeight: 700,
+                marginTop: 3,
+              }}
+            >
+              {criticalBlockers.length > 0
+                ? `${criticalBlockers.length} Blocked • ${laggingDomains.filter((d: any) => d.isLagging).length} Lagging Domains`
+                : 'All Domains On Pace'}
             </div>
           </div>
 
-          {/* Tile 4: Domain Coverage */}
+          {/* Tile 5: Domain Coverage */}
           <div
             style={{
               background: colors.cardBg,
@@ -1468,30 +1617,6 @@ export function CompanyTvDisplay({
             </div>
             <div style={{ fontSize: 10.5, color: colors.textSecondary, marginTop: 3 }}>
               Functional Areas Active
-            </div>
-          </div>
-
-          {/* Tile 5: Operators on Deck */}
-          <div
-            style={{
-              background: colors.cardBg,
-              border: `1px solid ${colors.cardBorder}`,
-              borderRadius: 16,
-              padding: '12px 16px',
-              boxShadow: colors.cardShadow,
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ fontSize: 10, fontWeight: 800, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
-                Startup Staff
-              </div>
-              <Users2 className="w-4 h-4 text-amber-600" />
-            </div>
-            <div style={{ fontSize: 32, fontWeight: 900, letterSpacing: '-1px', color: colors.textPrimary, lineHeight: 1.1, marginTop: 3 }}>
-              {metrics.operatorsCount}
-            </div>
-            <div style={{ fontSize: 10.5, color: colors.textSecondary, marginTop: 3 }}>
-              Team Members Operating
             </div>
           </div>
         </div>
@@ -1641,22 +1766,22 @@ export function CompanyTvDisplay({
           </div>
         </div>
 
-        {/* ── 6. Bottom Row: Sprint Deliverables Radar + Delivery Quality Mix ── */}
+        {/* ── 6. Bottom Row: Critical Blockers Radar ("Which") & Domain Lag Diagnostic ("Where") ── */}
         <div
           style={{
             display: 'grid',
-            gridTemplateColumns: '62% 38%',
+            gridTemplateColumns: '58% 42%',
             gap: 12,
             height: '24%',
             minHeight: 140,
             flexShrink: 0,
           }}
         >
-          {/* Active Deliverables Radar with Numbered Badges & Editorial Watermark */}
+          {/* Panel A: Critical Blockers & Lagging Todos ("WHICH is lagging") */}
           <div
             style={{
               background: colors.cardBg,
-              border: `1px solid ${colors.cardBorder}`,
+              border: `1px solid ${criticalBlockers.length > 0 ? 'rgba(202, 47, 43, 0.25)' : colors.cardBorder}`,
               borderRadius: 16,
               padding: '12px 18px',
               display: 'flex',
@@ -1668,15 +1793,33 @@ export function CompanyTvDisplay({
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Activity className="w-4 h-4 text-red-600" />
-                <h3 style={{ fontSize: 12.5, fontWeight: 900, color: colors.textPrimary }}>Sprint Deliverables Radar</h3>
+                <AlertTriangle className={`w-4 h-4 ${criticalBlockers.length > 0 ? 'text-red-600' : 'text-emerald-600'}`} />
+                <h3 style={{ fontSize: 12.5, fontWeight: 900, color: colors.textPrimary, letterSpacing: '-0.2px', margin: 0 }}>
+                  Critical Blockers & Lagging Radar
+                </h3>
               </div>
-              <span style={{ fontSize: 10.5, color: colors.textMuted }}>Active Sprint Backlog</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <span
+                  style={{
+                    padding: '2px 8px',
+                    borderRadius: 100,
+                    background: criticalBlockers.length > 0 ? 'rgba(202, 47, 43, 0.1)' : 'rgba(16, 185, 129, 0.1)',
+                    color: criticalBlockers.length > 0 ? colors.brandRed : '#059669',
+                    border: `1px solid ${criticalBlockers.length > 0 ? 'rgba(202, 47, 43, 0.25)' : 'rgba(16, 185, 129, 0.25)'}`,
+                    fontSize: 10,
+                    fontWeight: 800,
+                  }}
+                >
+                  {criticalBlockers.length > 0 ? `${criticalBlockers.length} Items Requiring Intervention` : 'All Clear'}
+                </span>
+              </div>
             </div>
 
-            {deliverables.length === 0 ? (
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, color: colors.textMuted, fontSize: 12 }}>
-                No deliverables registered for current weekly sprint
+            {criticalBlockers.length === 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', flex: 1, color: colors.textMuted, fontSize: 12 }}>
+                <CheckCircle2 className="w-8 h-8 text-emerald-600 mb-2 opacity-80" />
+                <span style={{ fontWeight: 800, color: colors.textPrimary, fontSize: 13 }}>Zero Active Blockers</span>
+                <span style={{ fontSize: 11, color: colors.textMuted, marginTop: 2 }}>All sprint deliverables are executing to pace without operational stalls.</span>
               </div>
             ) : (
               <div
@@ -1689,90 +1832,92 @@ export function CompanyTvDisplay({
                   minHeight: 0,
                 }}
               >
-                {deliverables.map((task, idx) => (
+                {criticalBlockers.slice(0, 4).map((task: any, idx: number) => (
                   <div
-                    key={task.id}
+                    key={task.id || idx}
                     style={{
-                      padding: '7px 10px',
+                      padding: '8px 11px',
                       background: colors.subtleCard,
-                      border: `1px solid ${colors.cardBorder}`,
-                      borderRadius: 8,
+                      border: '1px solid rgba(202, 47, 43, 0.2)',
+                      borderRadius: 10,
                       display: 'flex',
-                      alignItems: 'center',
+                      flexDirection: 'column',
                       justifyContent: 'space-between',
-                      gap: 8,
+                      gap: 4,
                     }}
                   >
-                    {/* Red Numbered Circle like Top Wins in reference */}
-                    <div
-                      style={{
-                        width: 18,
-                        height: 18,
-                        borderRadius: '50%',
-                        background: colors.brandRed,
-                        color: '#ffffff',
-                        fontSize: 10,
-                        fontWeight: 900,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                      }}
-                    >
-                      {idx + 1}
-                    </div>
-
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div
+                    <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 6 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flex: 1, minWidth: 0 }}>
+                        <div
+                          style={{
+                            width: 18,
+                            height: 18,
+                            borderRadius: '50%',
+                            background: colors.brandRed,
+                            color: '#ffffff',
+                            fontSize: 10,
+                            fontWeight: 900,
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            flexShrink: 0,
+                          }}
+                        >
+                          {idx + 1}
+                        </div>
+                        <div
+                          style={{
+                            fontSize: 11.5,
+                            fontWeight: 800,
+                            color: colors.textPrimary,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {task.title}
+                        </div>
+                      </div>
+                      <span
                         style={{
-                          fontSize: 11.5,
-                          fontWeight: 700,
-                          color: colors.textPrimary,
-                          overflow: 'hidden',
-                          textOverflow: 'ellipsis',
-                          whiteSpace: 'nowrap',
+                          padding: '1px 6px',
+                          borderRadius: 4,
+                          fontSize: 9,
+                          fontWeight: 900,
+                          textTransform: 'uppercase',
+                          background: 'rgba(202, 47, 43, 0.12)',
+                          color: colors.brandRed,
+                          border: '1px solid rgba(202, 47, 43, 0.25)',
+                          flexShrink: 0,
                         }}
                       >
-                        {task.title}
-                      </div>
-                      <div style={{ fontSize: 9.5, color: colors.textMuted, marginTop: 1, display: 'flex', gap: 6 }}>
-                        <span style={{ color: colors.brandRed, fontWeight: 700 }}>{task.domainName}</span>
-                        <span>•</span>
-                        <span>{task.assigneeName}</span>
-                      </div>
+                        {task.urgency || 'CRITICAL'}
+                      </span>
                     </div>
 
-                    <span
-                      style={{
-                        padding: '2px 6px',
-                        borderRadius: 5,
-                        fontSize: 9,
-                        fontWeight: 800,
-                        textTransform: 'uppercase',
-                        background:
-                          task.status === 'DONE'
-                            ? colors.accentGreenBg
-                            : task.status === 'IN_PROGRESS'
-                            ? colors.brandRedFaint
-                            : '#fdfbf7',
-                        color:
-                          task.status === 'DONE'
-                            ? colors.accentGreen
-                            : task.status === 'IN_PROGRESS'
-                            ? colors.brandRed
-                            : colors.textMuted,
-                        border: `1px solid ${
-                          task.status === 'DONE'
-                            ? colors.accentGreenBorder
-                            : task.status === 'IN_PROGRESS'
-                            ? colors.brandRedBorder
-                            : colors.cardBorder
-                        }`,
-                        flexShrink: 0,
-                      }}
-                    >
-                      {task.status}
-                    </span>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 10, gap: 6 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 5, minWidth: 0 }}>
+                        <span
+                          style={{
+                            padding: '1px 6px',
+                            borderRadius: 4,
+                            background: 'rgba(202, 47, 43, 0.08)',
+                            color: colors.brandRed,
+                            fontWeight: 800,
+                            fontSize: 9.5,
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                          }}
+                        >
+                          {task.domainName}
+                        </span>
+                        <span style={{ color: colors.textMuted, fontSize: 9.5 }}>• {task.assigneeName}</span>
+                      </div>
+                      <span style={{ color: colors.brandRed, fontWeight: 700, fontSize: 9.5, flexShrink: 0 }}>
+                        {task.lagReason}
+                      </span>
+                    </div>
                   </div>
                 ))}
               </div>
@@ -1786,16 +1931,16 @@ export function CompanyTvDisplay({
                 right: 14,
                 fontFamily: 'Georgia, serif',
                 fontStyle: 'italic',
-                fontSize: 12.5,
+                fontSize: 12,
                 color: colors.brandWatermark,
                 pointerEvents: 'none',
               }}
             >
-              Small Steps Brighter Days
+              Relentless Focus
             </div>
           </div>
 
-          {/* Delivery Quality Mix with Script Watermark */}
+          {/* Panel B: Domain Lag & Pacing Diagnostic ("WHERE is lagging") */}
           <div
             style={{
               background: colors.cardBg,
@@ -1811,52 +1956,104 @@ export function CompanyTvDisplay({
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Target className="w-4 h-4 text-red-600" />
-                <h3 style={{ fontSize: 12.5, fontWeight: 900, color: colors.textPrimary }}>Delivery Quality Mix</h3>
+                <Layers className="w-4 h-4 text-red-600" />
+                <h3 style={{ fontSize: 12.5, fontWeight: 900, color: colors.textPrimary, letterSpacing: '-0.2px', margin: 0 }}>
+                  Domain Pacing & Lag Diagnostic
+                </h3>
               </div>
-              <span style={{ fontSize: 10, color: colors.textMuted }}>Accuracy & Pacing</span>
+              <div style={{ fontSize: 10, color: colors.textMuted, fontWeight: 600 }}>
+                Target Pace: <span style={{ color: colors.brandRed, fontWeight: 900 }}>{sprintTargetPace}%</span>
+              </div>
             </div>
 
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minHeight: 0 }}>
-              {/* Pie Chart */}
-              <div style={{ width: 90, height: 90, flexShrink: 0 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      isAnimationActive={false}
-                      data={charts.quality}
-                      cx="50%"
-                      cy="50%"
-                      innerRadius={24}
-                      outerRadius={40}
-                      paddingAngle={3}
-                      dataKey="value"
-                    >
-                      {charts.quality.map((entry, index) => {
-                        const pieColors = [colors.brandRed, colors.brandRedSoft, '#ded4be']
-                        return <Cell key={`cell-${index}`} fill={pieColors[index % pieColors.length]} />
-                      })}
-                    </Pie>
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
+            <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-around', gap: 6 }}>
+              {(laggingDomains.length > 0 ? laggingDomains : charts.domains).slice(0, 4).map((dom: any) => {
+                const isLagging = dom.isLagging || (dom.rate < sprintTargetPace - 15)
+                const isOnTrack = !isLagging && dom.rate >= sprintTargetPace
 
-              {/* Quality Legend */}
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                {charts.quality.map((item, idx) => {
-                  const pieColors = [colors.brandRed, colors.brandRedSoft, '#ded4be']
-                  const itemColor = pieColors[idx % pieColors.length]
-                  return (
-                    <div key={item.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 11 }}>
+                return (
+                  <div key={dom.name} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 11 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: itemColor }} />
-                        <span style={{ color: colors.textSecondary }}>{item.name}</span>
+                        <span style={{ fontWeight: 800, color: colors.textPrimary }}>{dom.name}</span>
+                        <span style={{ fontSize: 9.5, color: colors.textMuted }}>
+                          ({dom.done || 0}/{dom.total || 0} done)
+                        </span>
                       </div>
-                      <span style={{ fontWeight: 800, color: colors.textPrimary }}>{item.value} tasks</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontSize: 10, color: isLagging ? colors.brandRed : colors.textMuted, fontWeight: isLagging ? 800 : 500 }}>
+                          {dom.lagReason || (isLagging ? `Trailing by ${sprintTargetPace - (dom.rate || 0)}%` : 'On Pace')}
+                        </span>
+                        <span
+                          style={{
+                            padding: '1px 6px',
+                            borderRadius: 4,
+                            fontSize: 9,
+                            fontWeight: 900,
+                            textTransform: 'uppercase',
+                            background: isLagging
+                              ? 'rgba(202, 47, 43, 0.12)'
+                              : isOnTrack
+                              ? 'rgba(16, 185, 129, 0.12)'
+                              : 'rgba(245, 158, 11, 0.12)',
+                            color: isLagging
+                              ? colors.brandRed
+                              : isOnTrack
+                              ? '#059669'
+                              : '#d97706',
+                            border: `1px solid ${
+                              isLagging
+                                ? 'rgba(202, 47, 43, 0.25)'
+                                : isOnTrack
+                                ? 'rgba(16, 185, 129, 0.25)'
+                                : 'rgba(245, 158, 11, 0.25)'
+                            }`,
+                          }}
+                        >
+                          {isLagging ? 'LAGGING' : isOnTrack ? 'ON TRACK' : 'PACING'}
+                        </span>
+                      </div>
                     </div>
-                  )
-                })}
-              </div>
+
+                    {/* Mini Progress Bar with Target Pace Line Marker */}
+                    <div
+                      style={{
+                        position: 'relative',
+                        height: 6,
+                        background: '#f4ede0',
+                        borderRadius: 3,
+                        overflow: 'visible',
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: `${Math.min(100, dom.rate || 0)}%`,
+                          height: '100%',
+                          background: isLagging
+                            ? 'linear-gradient(90deg, #ca2f2b 0%, #ef4444 100%)'
+                            : 'linear-gradient(90deg, #059669 0%, #10b981 100%)',
+                          borderRadius: 3,
+                          transition: 'width 0.4s ease',
+                        }}
+                      />
+                      {/* Sprint Target Pace Marker */}
+                      <div
+                        style={{
+                          position: 'absolute',
+                          left: `${sprintTargetPace}%`,
+                          top: -2,
+                          bottom: -2,
+                          width: 2,
+                          background: colors.textPrimary,
+                          borderRadius: 1,
+                          opacity: 0.7,
+                        }}
+                        title={`Target Pace: ${sprintTargetPace}%`}
+                      />
+                    </div>
+                  </div>
+                )
+              })}
             </div>
 
             {/* Script Watermark in Bottom Right corner */}
@@ -1867,12 +2064,12 @@ export function CompanyTvDisplay({
                 right: 14,
                 fontFamily: 'Georgia, serif',
                 fontStyle: 'italic',
-                fontSize: 12.5,
+                fontSize: 12,
                 color: colors.brandWatermark,
                 pointerEvents: 'none',
               }}
             >
-              Solve Scale Shine
+              Domain Rigor
             </div>
           </div>
         </div>

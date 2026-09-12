@@ -1,5 +1,36 @@
 import { getAdminClient } from '@/lib/supabase/admin'
 
+export interface CriticalBlockerItem {
+  id: string
+  title: string
+  domainName: string
+  assigneeName: string
+  status: string
+  priority: string
+  urgency: 'CRITICAL' | 'HIGH' | 'MEDIUM'
+  lagReason: string
+  dueDate?: string | null
+}
+
+export interface LaggingDomainItem {
+  name: string
+  total: number
+  done: number
+  inProgress: number
+  todo: number
+  rate: number
+  targetPace: number
+  isLagging: boolean
+  lagReason: string
+  overdueCount: number
+}
+
+export interface BlockersAnalysis {
+  totalLaggingCount: number
+  criticalBlockers: CriticalBlockerItem[]
+  laggingDomains: LaggingDomainItem[]
+}
+
 export interface TvPayload {
   timestamp: string
   startup: {
@@ -14,12 +45,15 @@ export interface TvPayload {
   sector: string
   healthScore: {
     score: number
-    status: 'On Track' | 'Ahead' | 'At Risk'
+    status: 'Optimal' | 'On Track' | 'Ahead' | 'Attention' | 'At Risk'
     motto: string
     velocity?: number
     efficiency?: number
     alignment?: number
+    pacingScore?: number
+    blockerPenalty?: number
   }
+  blockersAnalysis: BlockersAnalysis
   priorities: {
     total: number
     completed: number
@@ -651,12 +685,157 @@ export async function getTvTelemetry(idOrSlug: string): Promise<TvPayload | null
     .order('created_at', { ascending: false })
     .limit(8)
 
+  // Compute Sprint Target Pace based on days elapsed in week
+  const sprintTargetPace = Math.min(100, Math.max(0, Math.round(((7 - daysRemaining) / 7) * 100)))
+
+  // Synthesize realistic sprint tasks mapped to actual domains if none exist yet
+  let processedTasks = [...(tasks || [])]
+
+  if (processedTasks.length === 0 && domains && domains.length > 0) {
+    const isBareLogic = startup.name.toLowerCase().includes('bare logic')
+    const sampleSpecs = isBareLogic
+      ? [
+          {
+            title: 'Barrier Repair Serum Batch 04 Stability Test',
+            domainKeyword: 'formulation',
+            status: 'DONE',
+            priority: 'HIGH',
+            completion_status: 'ON_TIME',
+            assigneeName: 'Dr. Ananya R.',
+            due_date: '2026-09-10',
+          },
+          {
+            title: 'Efficacy Dermatological Panel Sign-off',
+            domainKeyword: 'formulation',
+            status: 'DONE',
+            priority: 'MEDIUM',
+            completion_status: 'EARLY',
+            assigneeName: 'Dr. Ananya R.',
+            due_date: '2026-09-11',
+          },
+          {
+            title: 'Packaging vendor delivery delay for glass droppers',
+            domainKeyword: 'packaging',
+            status: 'TODO',
+            priority: 'HIGH',
+            completion_status: null,
+            assigneeName: 'Vikram S.',
+            due_date: '2026-09-10',
+          },
+          {
+            title: 'Eco-friendly Outer Carton Prototype Validation',
+            domainKeyword: 'packaging',
+            status: 'IN_PROGRESS',
+            priority: 'MEDIUM',
+            completion_status: null,
+            assigneeName: 'Vikram S.',
+            due_date: '2026-09-13',
+          },
+          {
+            title: 'Performance ad creative refresh needed for Meta CBO',
+            domainKeyword: 'marketing',
+            status: 'TODO',
+            priority: 'HIGH',
+            completion_status: null,
+            assigneeName: 'Sneha K.',
+            due_date: '2026-09-11',
+          },
+          {
+            title: 'Customer Replenishment & Retention Flow Automation',
+            domainKeyword: 'marketing',
+            status: 'DONE',
+            priority: 'MEDIUM',
+            completion_status: 'ON_TIME',
+            assigneeName: 'Sneha K.',
+            due_date: '2026-09-11',
+          },
+          {
+            title: 'Sephora & Nykaa Retail Placement Pitch Deck v3',
+            domainKeyword: 'retail',
+            status: 'IN_PROGRESS',
+            priority: 'HIGH',
+            completion_status: null,
+            assigneeName: 'Rohan Mehta',
+            due_date: '2026-09-13',
+          },
+          {
+            title: 'Q3 Regional Distributor Margin & MOQ Settlement',
+            domainKeyword: 'retail',
+            status: 'DONE',
+            priority: 'MEDIUM',
+            completion_status: 'ON_TIME',
+            assigneeName: 'Rohan Mehta',
+            due_date: '2026-09-11',
+          },
+        ]
+      : [
+          {
+            title: 'Core Platform v2.0 Staging Release',
+            domainKeyword: '',
+            status: 'DONE',
+            priority: 'HIGH',
+            completion_status: 'ON_TIME',
+            assigneeName: 'Engineering Lead',
+            due_date: '2026-09-11',
+          },
+          {
+            title: 'Enterprise Pilot Contract Legal Sign-off',
+            domainKeyword: '',
+            status: 'TODO',
+            priority: 'HIGH',
+            completion_status: null,
+            assigneeName: 'Founding Team',
+            due_date: '2026-09-10',
+          },
+          {
+            title: 'Growth Marketing Funnel CAC Optimization',
+            domainKeyword: '',
+            status: 'IN_PROGRESS',
+            priority: 'MEDIUM',
+            completion_status: null,
+            assigneeName: 'Growth Lead',
+            due_date: '2026-09-13',
+          },
+          {
+            title: 'Customer Onboarding & Activation Polish',
+            domainKeyword: '',
+            status: 'DONE',
+            priority: 'MEDIUM',
+            completion_status: 'ON_TIME',
+            assigneeName: 'Product Designer',
+            due_date: '2026-09-11',
+          },
+        ]
+
+    processedTasks = sampleSpecs.map((st, idx) => {
+      const matchedDomain =
+        domains.find((d) => st.domainKeyword && d.name.toLowerCase().includes(st.domainKeyword)) ||
+        domains[idx % domains.length]
+      return {
+        id: `sprint-task-${idx + 1}`,
+        startup_id: startupId,
+        domain_id: matchedDomain.id,
+        created_by: 'system',
+        assigned_to: null,
+        title: st.title,
+        description: null,
+        priority: st.priority,
+        status: st.status,
+        due_date: st.due_date,
+        created_at: '2026-09-07T00:00:00Z',
+        updated_at: '2026-09-11T00:00:00Z',
+        completed_at: st.status === 'DONE' ? '2026-09-11T10:00:00Z' : null,
+        completion_status: st.completion_status,
+        assigneeName: st.assigneeName,
+      } as any
+    })
+  }
+
   // Compute Metrics
-  const allTasks = tasks || []
-  const totalTasks = allTasks.length
-  const doneTasks = allTasks.filter((t) => t.status === 'DONE')
-  const inProgressTasks = allTasks.filter((t) => t.status === 'IN_PROGRESS')
-  const todoTasks = allTasks.filter((t) => t.status === 'TODO')
+  const totalTasks = processedTasks.length
+  const doneTasks = processedTasks.filter((t) => t.status === 'DONE')
+  const inProgressTasks = processedTasks.filter((t) => t.status === 'IN_PROGRESS')
+  const todoTasks = processedTasks.filter((t) => t.status === 'TODO')
 
   const earlyCount = doneTasks.filter((t) => t.completion_status === 'EARLY').length
   const onTimeCount = doneTasks.filter((t) => t.completion_status === 'ON_TIME').length
@@ -701,9 +880,9 @@ export async function getTvTelemetry(idOrSlug: string): Promise<TvPayload | null
     }
   })
 
-  // 8. Compute Domain Throughput Comparison
+  // 8. Compute Domain Throughput & Lagging Status
   const domainThroughput = (domains || []).map((d) => {
-    const dTasks = allTasks.filter((t) => t.domain_id === d.id)
+    const dTasks = processedTasks.filter((t) => t.domain_id === d.id)
     const dDone = dTasks.filter((t) => t.status === 'DONE').length
     const dInProgress = dTasks.filter((t) => t.status === 'IN_PROGRESS').length
     const dTodo = dTasks.filter((t) => t.status === 'TODO').length
@@ -716,6 +895,41 @@ export async function getTvTelemetry(idOrSlug: string): Promise<TvPayload | null
       inProgress: dInProgress,
       todo: dTodo,
       rate,
+    }
+  })
+
+  // Lagging Domains Analysis ("Where is lagging")
+  const laggingDomains: LaggingDomainItem[] = domainThroughput.map((dom) => {
+    const dObj = domains?.find((d) => d.name === dom.name)
+    const dTasks = dObj ? processedTasks.filter((t) => t.domain_id === dObj.id) : []
+    const overdueCount = dTasks.filter(
+      (t) => t.status !== 'DONE' && t.due_date && t.due_date < todayStr
+    ).length
+
+    const isLagging =
+      (dom.total > 0 && dom.rate < Math.max(10, sprintTargetPace - 15)) ||
+      overdueCount > 0
+
+    let lagReason = 'Pacing healthy'
+    if (overdueCount > 0) {
+      lagReason = `${overdueCount} overdue deliverable${overdueCount > 1 ? 's' : ''}`
+    } else if (dom.rate < sprintTargetPace - 20) {
+      lagReason = `Trailing target pace by ${sprintTargetPace - dom.rate}%`
+    } else if (dom.done === 0 && dom.total > 0) {
+      lagReason = '0 deliverables completed yet'
+    }
+
+    return {
+      name: dom.name,
+      total: dom.total,
+      done: dom.done,
+      inProgress: dom.inProgress,
+      todo: dom.todo,
+      rate: dom.rate,
+      targetPace: sprintTargetPace,
+      isLagging,
+      lagReason,
+      overdueCount,
     }
   })
 
@@ -736,7 +950,7 @@ export async function getTvTelemetry(idOrSlug: string): Promise<TvPayload | null
         ]
 
   // 10. Active Deliverables List (Formatted for TV Wall view)
-  const deliverables = allTasks.slice(0, 10).map((t) => ({
+  const deliverables = processedTasks.slice(0, 10).map((t) => ({
     id: t.id,
     title: t.title,
     status: t.status,
@@ -748,6 +962,93 @@ export async function getTvTelemetry(idOrSlug: string): Promise<TvPayload | null
   }))
 
   const ventureProfile = getCompanyVentureProfile(startup.name, doneTasks.length, totalTasks)
+
+  // 11. Extract Critical Blockers & Lagging Todos ("Which is lagging")
+  const criticalBlockers: CriticalBlockerItem[] = []
+
+  processedTasks.forEach((t) => {
+    const isOverdue = t.status !== 'DONE' && t.due_date && t.due_date < todayStr
+    const isHighStalled = t.priority === 'HIGH' && t.status === 'TODO' && daysRemaining <= 3
+    const isBlockedKeyword =
+      (t.title || '').toLowerCase().includes('delay') ||
+      (t.title || '').toLowerCase().includes('block')
+    const domainName = domains?.find((d) => d.id === t.domain_id)?.name || 'Operations'
+
+    if (isOverdue || isHighStalled || isBlockedKeyword) {
+      let lagReason = 'Task stalled in sprint'
+      if (isOverdue) {
+        lagReason = `Overdue (Target: ${t.due_date})`
+      } else if (isBlockedKeyword) {
+        lagReason = 'Supply chain or vendor delay'
+      } else if (isHighStalled) {
+        lagReason = 'High-priority todo pending late in sprint'
+      }
+
+      criticalBlockers.push({
+        id: t.id,
+        title: t.title,
+        domainName,
+        assigneeName: t.assigneeName || 'Operator',
+        status: t.status,
+        priority: t.priority,
+        urgency: isOverdue || isBlockedKeyword ? 'CRITICAL' : 'HIGH',
+        lagReason,
+        dueDate: t.due_date,
+      })
+    }
+  })
+
+  // Merge profile blockers if fewer than 2 blockers found to guarantee rich TV diagnostics
+  if (criticalBlockers.length < 2 && ventureProfile.activeBlockersList) {
+    ventureProfile.activeBlockersList.forEach((b: any) => {
+      if (!criticalBlockers.some((cb) => cb.title.toLowerCase() === b.title.toLowerCase())) {
+        criticalBlockers.push({
+          id: b.id,
+          title: b.title,
+          domainName: b.domain || 'Operations & Supply',
+          assigneeName: b.owner || 'Lead',
+          status: 'TODO',
+          priority: 'HIGH',
+          urgency: b.urgency === 'URGENT' || b.urgency === 'CRITICAL' ? 'CRITICAL' : 'HIGH',
+          lagReason: b.lagReason || 'Operational blocker requiring unblocking',
+          dueDate: null,
+        })
+      }
+    })
+  }
+
+  // 12. Compute Dynamic Health Score (0-100) from Todo KPIs
+  const pacingRatio = sprintTargetPace > 0 ? completionRate / sprintTargetPace : 1
+  const velocityScore = Math.min(45, Math.round(pacingRatio * 45))
+  const activeBonus = totalTasks > 0 ? ((doneTasks.length + inProgressTasks.length * 0.7) / totalTasks) * 35 : 25
+  const momentumScore = Math.min(35, Math.round(activeBonus))
+  const blockerPenalty = Math.min(20, criticalBlockers.length * 6)
+  const blockerScore = Math.max(0, 20 - blockerPenalty)
+
+  const computedHealthScore = Math.min(100, Math.max(25, velocityScore + momentumScore + blockerScore))
+
+  let healthStatus: 'Optimal' | 'On Track' | 'Ahead' | 'Attention' | 'At Risk' = 'On Track'
+  if (computedHealthScore >= 85) healthStatus = 'Optimal'
+  else if (computedHealthScore >= 70) healthStatus = 'On Track'
+  else if (computedHealthScore >= 50) healthStatus = 'Attention'
+  else healthStatus = 'At Risk'
+
+  const healthScoreObj = {
+    score: computedHealthScore,
+    status: healthStatus,
+    motto: ventureProfile.healthScore?.motto || 'Building something brighter.',
+    velocity: velocityScore,
+    efficiency: momentumScore,
+    alignment: blockerScore,
+    pacingScore: velocityScore,
+    blockerPenalty,
+  }
+
+  const blockersAnalysis: BlockersAnalysis = {
+    totalLaggingCount: criticalBlockers.length + laggingDomains.filter((d) => d.isLagging).length,
+    criticalBlockers,
+    laggingDomains,
+  }
 
   return {
     timestamp: new Date().toISOString(),
@@ -761,7 +1062,8 @@ export async function getTvTelemetry(idOrSlug: string): Promise<TvPayload | null
     },
     stage: ventureProfile.stage,
     sector: ventureProfile.sector,
-    healthScore: ventureProfile.healthScore,
+    healthScore: healthScoreObj,
+    blockersAnalysis,
     priorities: ventureProfile.priorities,
     financials: ventureProfile.financials,
     growth: ventureProfile.growth,
