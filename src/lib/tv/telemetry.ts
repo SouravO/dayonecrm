@@ -128,7 +128,14 @@ export interface TvPayload {
     domainsCount: number
   }
   charts: {
-    burndown: Array<{ day: string; ideal: number; actual: number | null; completed: number }>
+    burndown: Array<{
+      day: string
+      ideal: number
+      actual: number | null
+      completed: number | null
+      targetCompleted: number
+      totalTasks: number
+    }>
     domains: Array<{ name: string; total: number; done: number; inProgress: number; todo: number; rate: number }>
     quality: Array<{ name: string; value: number; color: string }>
   }
@@ -172,6 +179,13 @@ export interface TvStartupSummary {
   stage?: 'MVP' | 'GTM' | 'Growth'
 }
 
+function formatLocalDate(d: Date): string {
+  const year = d.getFullYear()
+  const month = String(d.getMonth() + 1).padStart(2, '0')
+  const date = String(d.getDate()).padStart(2, '0')
+  return `${year}-${month}-${date}`
+}
+
 export function getWeekBoundaries(date: Date = new Date()) {
   const d = new Date(date)
   const day = d.getDay()
@@ -185,8 +199,8 @@ export function getWeekBoundaries(date: Date = new Date()) {
   sunday.setHours(23, 59, 59, 999)
 
   return {
-    mondayStr: monday.toISOString().split('T')[0],
-    sundayStr: sunday.toISOString().split('T')[0],
+    mondayStr: formatLocalDate(monday),
+    sundayStr: formatLocalDate(sunday),
     monday,
     sunday,
   }
@@ -620,7 +634,7 @@ export async function getTvTelemetry(idOrSlug: string): Promise<TvPayload | null
 
   const startupId = startup.id
   const { mondayStr, sundayStr, sunday } = getWeekBoundaries()
-  const todayStr = new Date().toISOString().split('T')[0]
+  const todayStr = formatLocalDate(new Date())
 
   // Calculate days remaining in current sprint (until Sunday)
   const now = new Date()
@@ -844,7 +858,16 @@ export async function getTvTelemetry(idOrSlug: string): Promise<TvPayload | null
         due_date: st.due_date,
         created_at: '2026-09-07T00:00:00Z',
         updated_at: '2026-09-11T00:00:00Z',
-        completed_at: st.status === 'DONE' ? '2026-09-11T10:00:00Z' : null,
+        completed_at:
+          st.status === 'DONE'
+            ? idx === 0
+              ? '2026-09-08T14:30:00Z'
+              : idx === 1
+              ? '2026-09-09T16:00:00Z'
+              : idx === 5
+              ? '2026-09-10T11:20:00Z'
+              : '2026-09-11T15:45:00Z'
+            : null,
         completion_status: st.completion_status,
         assigneeName: st.assigneeName,
       } as any
@@ -875,28 +898,31 @@ export async function getTvTelemetry(idOrSlug: string): Promise<TvPayload | null
     sprintStatus = 'BEHIND'
   }
 
-  // 7. Compute Burndown Trajectory Data (Mon -> Sun)
+  // 7. Compute Velocity Output & Burndown Trajectory Data (Mon -> Sun)
   const dayNames = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
   const idealStep = totalTasks > 0 ? totalTasks / 6 : 1
   const burndownData = dayNames.map((day, idx) => {
     const idealRemaining = Math.max(0, Math.round(totalTasks - idx * idealStep))
-    const dayOffset = idx
-    const targetDay = new Date(mondayStr)
-    targetDay.setDate(targetDay.getDate() + dayOffset)
-    const targetDayStr = targetDay.toISOString().split('T')[0]
+    const targetDay = new Date(mondayStr + 'T00:00:00')
+    targetDay.setDate(targetDay.getDate() + idx)
+    const targetDayStr = formatLocalDate(targetDay)
 
     const completedByDay = doneTasks.filter((t) => {
-      if (!t.completed_at) return false
-      return t.completed_at.split('T')[0] <= targetDayStr
+      const compDate = t.completed_at || (t.status === 'DONE' ? t.updated_at : null)
+      if (!compDate) return false
+      return compDate.split('T')[0] <= targetDayStr
     }).length
 
     const actualRemaining = Math.max(0, totalTasks - completedByDay)
+    const targetCompleted = totalTasks > 0 ? Math.min(totalTasks, Math.round(((idx + 1) / 7) * totalTasks)) : 0
 
     return {
       day,
       ideal: totalTasks > 0 ? idealRemaining : 0,
       actual: targetDayStr <= todayStr ? actualRemaining : null,
-      completed: completedByDay,
+      completed: targetDayStr <= todayStr ? completedByDay : null,
+      targetCompleted,
+      totalTasks,
     }
   })
 

@@ -475,6 +475,38 @@ export function CompanyTvDisplay({
   // Calculate Sprint Expected Pace (Mon=0% -> Sun=100%)
   const sprintTargetPace = Math.min(100, Math.max(0, Math.round(((7 - sprint.daysRemaining) / 7) * 100)))
 
+  // Calculate Trajectory Color Indication (Emerald / Sky Blue / Amber)
+  const targetExpectedTasks = Math.round((sprintTargetPace / 100) * totalTasks)
+  const isTrajectoryAhead = metrics.doneTasks > targetExpectedTasks
+  const isTrajectoryOnTrack = metrics.doneTasks >= Math.max(1, targetExpectedTasks - 1)
+  const isTrajectoryLagging = !isTrajectoryAhead && !isTrajectoryOnTrack && totalTasks > 0
+
+  let trajectoryColor = '#059669' // Emerald
+  let trajectoryBadgeBg = '#ecfdf5'
+  let trajectoryBadgeColor = '#065f46'
+  let trajectoryBadgeBorder = '#a7f3d0'
+  let trajectoryStatusLabel = 'ON TRACK'
+
+  if (isTrajectoryAhead) {
+    trajectoryColor = '#059669'
+    trajectoryBadgeBg = '#ecfdf5'
+    trajectoryBadgeColor = '#065f46'
+    trajectoryBadgeBorder = '#a7f3d0'
+    trajectoryStatusLabel = `AHEAD (+${metrics.doneTasks - targetExpectedTasks})`
+  } else if (isTrajectoryOnTrack) {
+    trajectoryColor = '#0284c7' // Electric Sky Blue
+    trajectoryBadgeBg = '#f0f9ff'
+    trajectoryBadgeColor = '#0369a1'
+    trajectoryBadgeBorder = '#bae6fd'
+    trajectoryStatusLabel = 'PACING WELL'
+  } else if (isTrajectoryLagging) {
+    trajectoryColor = '#ea580c' // Warm Coral / Orange
+    trajectoryBadgeBg = '#fff7ed'
+    trajectoryBadgeColor = '#9a3412'
+    trajectoryBadgeBorder = '#fed7aa'
+    trajectoryStatusLabel = 'NEEDS PUSH'
+  }
+
   const activeStartupObj = allStartups.find((s) => s.id === currentStartupId || s.name.toLowerCase() === startup.name.toLowerCase())
   const activeLogoUrl = activeStartupObj?.logo_url || (startup as any).logo_url
   const activeSector = data.sector || activeStartupObj?.sector || 'Skincare / Beauty Tech'
@@ -1646,20 +1678,51 @@ export function CompanyTvDisplay({
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <TrendingUp className="w-4 h-4 text-red-600" />
-                <h3 style={{ fontSize: 13, fontWeight: 900, letterSpacing: '-0.2px', color: colors.textPrimary }}>
-                  Weekly Burndown & Execution Trajectory
-                </h3>
+                <div
+                  style={{
+                    width: 26,
+                    height: 26,
+                    borderRadius: 6,
+                    background: `${trajectoryColor}15`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <TrendingUp className="w-4 h-4" style={{ color: trajectoryColor }} />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: 13, fontWeight: 900, letterSpacing: '-0.2px', color: colors.textPrimary, margin: 0 }}>
+                    Weekly Output & Execution Trajectory
+                  </h3>
+                  <div style={{ fontSize: 10, color: colors.textMuted }}>
+                    Cumulative Shipped Deliverables (Ascending Pace)
+                  </div>
+                </div>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 11 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <span style={{ width: 10, height: 3, background: colors.chartIdeal, borderRadius: 2 }} />
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 10.5 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{ width: 10, height: 2, background: '#94a3b8', borderRadius: 1 }} />
                   <span style={{ color: colors.textMuted }}>Target Pace</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <span style={{ width: 10, height: 3, background: colors.brandRed, borderRadius: 2 }} />
-                  <span style={{ color: colors.brandRed, fontWeight: 800 }}>Actual Work</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{ width: 10, height: 3, background: trajectoryColor, borderRadius: 2 }} />
+                  <span style={{ color: trajectoryColor, fontWeight: 800 }}>Shipped Output</span>
                 </div>
+                <span
+                  style={{
+                    padding: '2px 7px',
+                    borderRadius: 4,
+                    fontSize: 9.5,
+                    fontWeight: 900,
+                    textTransform: 'uppercase',
+                    background: trajectoryBadgeBg,
+                    color: trajectoryBadgeColor,
+                    border: `1px solid ${trajectoryBadgeBorder}`,
+                  }}
+                >
+                  {trajectoryStatusLabel}
+                </span>
               </div>
             </div>
 
@@ -1667,9 +1730,9 @@ export function CompanyTvDisplay({
               <ResponsiveContainer width="100%" height="100%">
                 <AreaChart data={charts.burndown} margin={{ top: 8, right: 12, left: -20, bottom: 0 }}>
                   <defs>
-                    <linearGradient id="tvRedGradient" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor={colors.brandRed} stopOpacity={0.25} />
-                      <stop offset="95%" stopColor={colors.brandRed} stopOpacity={0.01} />
+                    <linearGradient id="tvVelocityGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={trajectoryColor} stopOpacity={0.35} />
+                      <stop offset="95%" stopColor={trajectoryColor} stopOpacity={0.02} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke={colors.gridLine} />
@@ -1683,28 +1746,33 @@ export function CompanyTvDisplay({
                       color: colors.textPrimary,
                       fontSize: 12,
                     }}
+                    formatter={(value: any, name: any) => {
+                      if (name === 'Target Pace') return [`${value} tasks`, 'Target Pace']
+                      if (name === 'Shipped Tasks') return [`${value} tasks`, 'Cumulative Shipped']
+                      return [value, name || '']
+                    }}
                   />
                   <Area
                     isAnimationActive={false}
                     type="monotone"
-                    dataKey="ideal"
-                    name="Target Remaining"
-                    stroke={colors.chartIdeal}
-                    strokeWidth={1.8}
+                    dataKey="targetCompleted"
+                    name="Target Pace"
+                    stroke="#94a3b8"
+                    strokeWidth={2}
                     strokeDasharray="4 4"
                     fill="transparent"
                   />
                   <Area
                     isAnimationActive={false}
-                    connectNulls={true}
+                    connectNulls={false}
                     type="monotone"
-                    dataKey="actual"
-                    name="Actual Remaining"
-                    stroke={colors.brandRed}
-                    strokeWidth={3}
-                    fill="url(#tvRedGradient)"
-                    dot={{ fill: colors.brandRed, r: 4 }}
-                    activeDot={{ r: 6 }}
+                    dataKey="completed"
+                    name="Shipped Tasks"
+                    stroke={trajectoryColor}
+                    strokeWidth={3.5}
+                    fill="url(#tvVelocityGradient)"
+                    dot={{ fill: trajectoryColor, r: 4.5, stroke: '#ffffff', strokeWidth: 1.5 }}
+                    activeDot={{ r: 6.5, fill: trajectoryColor }}
                   />
                 </AreaChart>
               </ResponsiveContainer>
@@ -1726,12 +1794,42 @@ export function CompanyTvDisplay({
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Layers className="w-4 h-4 text-red-600" />
-                <h3 style={{ fontSize: 13, fontWeight: 900, letterSpacing: '-0.2px', color: colors.textPrimary }}>
-                  Domain Throughput
-                </h3>
+                <div
+                  style={{
+                    width: 26,
+                    height: 26,
+                    borderRadius: 6,
+                    background: '#10b98115',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <Layers className="w-4 h-4 text-emerald-600" />
+                </div>
+                <div>
+                  <h3 style={{ fontSize: 13, fontWeight: 900, letterSpacing: '-0.2px', color: colors.textPrimary, margin: 0 }}>
+                    Domain Throughput
+                  </h3>
+                  <div style={{ fontSize: 10, color: colors.textMuted }}>
+                    Functional Delivery Velocity
+                  </div>
+                </div>
               </div>
-              <span style={{ fontSize: 10.5, color: colors.textMuted }}>Task Delivery</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 10.5 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{ width: 8, height: 8, background: '#10b981', borderRadius: 2 }} />
+                  <span style={{ color: colors.textMuted }}>Shipped</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{ width: 8, height: 8, background: '#0ea5e9', borderRadius: 2 }} />
+                  <span style={{ color: colors.textMuted }}>In Progress</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <span style={{ width: 8, height: 8, background: '#cbd5e1', borderRadius: 2 }} />
+                  <span style={{ color: colors.textMuted }}>Backlog</span>
+                </div>
+              </div>
             </div>
 
             <div style={{ flex: 1, minHeight: 0, width: '100%' }}>
@@ -1756,9 +1854,9 @@ export function CompanyTvDisplay({
                       }}
                     />
                     <Legend wrapperStyle={{ fontSize: 10.5, color: colors.textMuted }} />
-                    <Bar isAnimationActive={false} dataKey="done" name="Completed" fill={colors.brandRed} radius={[4, 4, 0, 0]} />
-                    <Bar isAnimationActive={false} dataKey="inProgress" name="Active" fill={colors.brandRedSoft} radius={[4, 4, 0, 0]} />
-                    <Bar isAnimationActive={false} dataKey="todo" name="Backlog" fill="#ded4be" radius={[4, 4, 0, 0]} />
+                    <Bar isAnimationActive={false} dataKey="done" name="Completed" fill="#10b981" radius={[4, 4, 0, 0]} />
+                    <Bar isAnimationActive={false} dataKey="inProgress" name="Active" fill="#0ea5e9" radius={[4, 4, 0, 0]} />
+                    <Bar isAnimationActive={false} dataKey="todo" name="Backlog" fill="#cbd5e1" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               )}
