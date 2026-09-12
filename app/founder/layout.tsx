@@ -47,6 +47,7 @@ export default async function FounderLayout({ children }: { children: React.Reac
         brandLabel={startupName}
         brandSublabel="Founder Dashboard"
         brandLogoUrl={startupLogoUrl}
+        startupId={member?.startup_id}
         navItems={navItems}
         userName={session.full_name}
         userEmail={session.email}

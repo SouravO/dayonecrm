@@ -27,11 +27,13 @@ interface NavItem {
 }
 
 import { CompanyLogo } from '@/components/brand/CompanyLogo'
+import { FounderLogoManager } from '@/components/brand/FounderLogoManager'
 
 interface SidebarProps {
   brandLabel: string
   brandSublabel: string
   brandLogoUrl?: string | null
+  startupId?: string
   navItems: NavItem[]
   userName: string
   userEmail: string
@@ -84,6 +86,7 @@ export function Sidebar({
   brandLabel,
   brandSublabel,
   brandLogoUrl,
+  startupId,
   navItems,
   userName,
   userEmail,
@@ -112,7 +115,17 @@ export function Sidebar({
             gap: 10,
           }}
         >
-          <CompanyLogo logoUrl={brandLogoUrl} name={brandLabel} size={32} />
+          {userRole === 'Founder' && startupId ? (
+            <FounderLogoManager
+              startupId={startupId}
+              startupName={brandLabel}
+              currentLogoUrl={brandLogoUrl}
+              size={32}
+              variant="avatar"
+            />
+          ) : (
+            <CompanyLogo logoUrl={brandLogoUrl} name={brandLabel} size={32} />
+          )}
           <div style={{ flex: 1, minWidth: 0 }}>
             <div
               style={{

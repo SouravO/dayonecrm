@@ -31,6 +31,7 @@ export interface Startup {
   email: string
   phone: string | null
   status: StartupStatus
+  logo_url?: string | null
   created_at: string
   updated_at: string
 }

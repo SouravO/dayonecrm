@@ -24,6 +24,7 @@ import {
   MonitorPlay,
 } from 'lucide-react'
 import { CompanyLogo } from '@/components/brand/CompanyLogo'
+import { FounderLogoManager } from '@/components/brand/FounderLogoManager'
 
 export const metadata: Metadata = { title: 'Founder Command Center — Day One' }
 
@@ -97,7 +98,17 @@ export default async function FounderDashboard() {
       {/* ── Top Executive Header with Company Logo ── */}
       <div className="page-header" style={{ marginBottom: 28, alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <CompanyLogo logoUrl={startupLogoUrl} name={startupName} size={54} />
+          {startupId ? (
+            <FounderLogoManager
+              startupId={startupId}
+              startupName={startupName}
+              currentLogoUrl={startupLogoUrl}
+              size={54}
+              variant="avatar"
+            />
+          ) : (
+            <CompanyLogo logoUrl={startupLogoUrl} name={startupName} size={54} />
+          )}
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
               <span className="badge badge-neutral" style={{ fontSize: 11, letterSpacing: '0.3px' }}>
@@ -142,15 +153,23 @@ export default async function FounderDashboard() {
         {/* Header Action Buttons */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           {startupId && (
-            <Link
-              href={`/tv/${startupId}`}
-              target="_blank"
-              className="btn btn-secondary btn-sm"
-              title="Launch dedicated TV mission control screen for wall display"
-            >
-              <MonitorPlay className="w-3.5 h-3.5 text-purple-600" />
-              <span>TV Display</span>
-            </Link>
+            <>
+              <FounderLogoManager
+                startupId={startupId}
+                startupName={startupName}
+                currentLogoUrl={startupLogoUrl}
+                variant="button"
+              />
+              <Link
+                href={`/tv/${startupId}`}
+                target="_blank"
+                className="btn btn-secondary btn-sm"
+                title="Launch dedicated TV mission control screen for wall display"
+              >
+                <MonitorPlay className="w-3.5 h-3.5 text-purple-600" />
+                <span>TV Display</span>
+              </Link>
+            </>
           )}
           <Link href="/founder/tasks" className="btn btn-secondary btn-sm">
             <Plus className="w-3.5 h-3.5" />
@@ -753,6 +772,14 @@ export default async function FounderDashboard() {
                   <ArrowUpRight className="w-4 h-4 text-[#8c8375] action-arrow" />
                 </Link>
               ))}
+              {startupId && (
+                <FounderLogoManager
+                  startupId={startupId}
+                  startupName={startupName}
+                  currentLogoUrl={startupLogoUrl}
+                  variant="quick-action"
+                />
+              )}
             </div>
           </div>
         </div>
