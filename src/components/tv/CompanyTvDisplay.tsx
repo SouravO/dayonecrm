@@ -4,49 +4,61 @@ import React, { useEffect, useState, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import {
   ResponsiveContainer,
-  BarChart as RechartsBarChart,
+  AreaChart,
+  Area,
+  BarChart,
   Bar,
   XAxis,
   YAxis,
   CartesianGrid,
+  Tooltip,
+  Legend,
+  PieChart,
+  Pie,
+  Cell,
 } from 'recharts'
 import {
   Maximize2,
   Minimize2,
-  Layers,
-  Heart,
-  ListOrdered,
-  CheckCircle2,
-  Target,
-  BarChart3,
-  Hourglass,
-  TrendingUp,
-  Flag,
-  Star,
-  AlertTriangle,
+  RefreshCw,
   Zap,
-  Trophy,
-  AlertCircle,
-  Gem,
-  Check,
-  ArrowRight,
+  Target,
+  Clock,
+  CheckCircle2,
+  AlertTriangle,
+  Users2,
+  Layers,
+  Flame,
+  ArrowUpRight,
+  TrendingUp,
+  Activity,
+  Compass,
+  ChevronDown,
   ChevronLeft,
   ChevronRight,
-  ChevronDown,
+  Play,
+  Pause,
+  Copy,
+  Check,
   Search,
+  ExternalLink,
+  Sliders,
+  Sparkles,
+  LayoutGrid,
 } from 'lucide-react'
+import { Logo } from '@/components/brand/Logo'
 import { CompanyLogo } from '@/components/brand/CompanyLogo'
 import type { TvPayload } from '@/lib/tv/telemetry'
 
 export interface StartupOption {
   id: string
   name: string
-  email: string
+  email?: string
   status: string
   slug: string
-  planGoal: string | null
-  tasksCount: number
-  domainsCount: number
+  planGoal?: string | null
+  tasksCount?: number
+  domainsCount?: number
   logo_url?: string | null
   sector?: string
   stage?: 'MVP' | 'GTM' | 'Growth'
@@ -55,25 +67,33 @@ export interface StartupOption {
 interface Props {
   initialData: TvPayload
   startupId: string
+  initialTheme?: 'dark' | 'cream'
   allStartups?: StartupOption[]
 }
 
 export function CompanyTvDisplay({
   initialData,
   startupId,
+  initialTheme = 'cream',
   allStartups = [],
 }: Props) {
   const [data, setData] = useState<TvPayload>(initialData)
   const [currentStartupId, setCurrentStartupId] = useState<string>(startupId || initialData.startup.id)
   const [isFullscreen, setIsFullscreen] = useState(false)
+  const [countdown, setCountdown] = useState<number>(20)
+  const [clock, setClock] = useState<string>('')
+  const [clockDate, setClockDate] = useState<string>('')
+  const [isRefreshing, setIsRefreshing] = useState(false)
   const [isSwitching, setIsSwitching] = useState(false)
 
   // Company Swapper Dropdown & Auto-Cycle state
   const [isDropdownOpen, setIsDropdownOpen] = useState(false)
   const [companySearch, setCompanySearch] = useState('')
   const [isAutoCycle, setIsAutoCycle] = useState(false)
-  const [autoCycleSeconds] = useState(15)
+  const [autoCycleSeconds, setAutoCycleSeconds] = useState(15)
   const [autoCycleProgress, setAutoCycleProgress] = useState(0)
+  const [isFleetModalOpen, setIsFleetModalOpen] = useState(false)
+  const [copiedUrl, setCopiedUrl] = useState(false)
 
   const dropdownRef = useRef<HTMLDivElement>(null)
 
@@ -85,7 +105,7 @@ export function CompanyTvDisplay({
     }
   }, [initialData])
 
-  // Clear legacy dark mode preference and restore auto-cycle preference
+  // Clear legacy dark mode preference
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('dayone_tv_theme')
@@ -94,24 +114,36 @@ export function CompanyTvDisplay({
         setIsAutoCycle(true)
       }
     }
+
+    const updateClock = () => {
+      const now = new Date()
+      setClock(
+        now.toLocaleTimeString('en-US', {
+          hour12: false,
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+        })
+      )
+      setClockDate(
+        now.toLocaleDateString('en-US', {
+          weekday: 'short',
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+        })
+      )
+    }
+
+    updateClock()
+    const clockInterval = setInterval(updateClock, 1000)
+    return () => clearInterval(clockInterval)
   }, [])
 
-  // Close dropdown on outside click
-  useEffect(() => {
-    const handleOutsideClick = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setIsDropdownOpen(false)
-      }
-    }
-    if (isDropdownOpen) {
-      document.addEventListener('mousedown', handleOutsideClick)
-    }
-    return () => document.removeEventListener('mousedown', handleOutsideClick)
-  }, [isDropdownOpen])
-
-  // WakeLock: Keep TV screen awake
+  // WakeLock: Keep TV screen awake without sleeping
   useEffect(() => {
     let wakeLock: any = null
+
     const requestWakeLock = async () => {
       if (typeof navigator !== 'undefined' && 'wakeLock' in navigator) {
         try {
@@ -121,11 +153,65 @@ export function CompanyTvDisplay({
         }
       }
     }
+
     requestWakeLock()
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        requestWakeLock()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
     return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
       if (wakeLock) wakeLock.release().catch(() => {})
     }
   }, [])
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsDropdownOpen(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
+
+  // Telemetry Fetch Function for active startup
+  const fetchTelemetry = useCallback(async (targetId?: string) => {
+    const idToFetch = targetId || currentStartupId
+    try {
+      setIsRefreshing(true)
+      const res = await fetch(`/api/tv/${idToFetch}`, { cache: 'no-store' })
+      if (res.ok) {
+        const json = await res.json()
+        setData(json)
+        setCountdown(20)
+      }
+    } catch (e) {
+      console.error('Failed to sync TV telemetry:', e)
+    } finally {
+      setIsRefreshing(false)
+    }
+  }, [currentStartupId])
+
+  // Periodic Telemetry Polling (20s)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev <= 1) {
+          fetchTelemetry()
+          return 20
+        }
+        return prev - 1
+      })
+    }, 1000)
+
+    return () => clearInterval(interval)
+  }, [fetchTelemetry])
 
   // Handle Switch to Specific Startup
   const handleSelectStartup = useCallback(async (targetStartup: StartupOption) => {
@@ -144,7 +230,9 @@ export function CompanyTvDisplay({
         const json = await res.json()
         setData(json)
         setCurrentStartupId(targetStartup.id)
+        setCountdown(20)
 
+        // Update URL path without full page reload
         if (typeof window !== 'undefined') {
           const newUrl = `/tv/${targetStartup.slug || targetStartup.id}`
           window.history.replaceState(null, '', newUrl)
@@ -153,7 +241,7 @@ export function CompanyTvDisplay({
     } catch (err) {
       console.error('Failed to swap startup telemetry:', err)
     } finally {
-      setTimeout(() => setIsSwitching(false), 200)
+      setTimeout(() => setIsSwitching(false), 250)
     }
   }, [currentStartupId, isSwitching])
 
@@ -174,37 +262,52 @@ export function CompanyTvDisplay({
     handleSelectStartup(allStartups[nextIdx])
   }, [allStartups, currentStartupIndex, handleSelectStartup])
 
-  // Auto-Cycle Timer
+  // Auto-Cycle Ticker (Cycles through companies automatically)
   useEffect(() => {
-    if (!isAutoCycle || allStartups.length <= 1) {
-      setAutoCycleProgress(0)
+    if (!isAutoCycle || allStartups.length <= 1 || isDropdownOpen) {
       return
     }
 
-    const intervalMs = 100
-    const step = 100 / (autoCycleSeconds * (1000 / intervalMs))
+    const stepMs = 250
+    const totalMs = autoCycleSeconds * 1000
+    const increment = (stepMs / totalMs) * 100
 
-    const timer = setInterval(() => {
+    const cycleInterval = setInterval(() => {
       setAutoCycleProgress((prev) => {
         if (prev >= 100) {
           handleNextStartup()
           return 0
         }
-        return prev + step
+        return prev + increment
       })
-    }, intervalMs)
+    }, stepMs)
 
-    return () => clearInterval(timer)
-  }, [isAutoCycle, autoCycleSeconds, allStartups.length, handleNextStartup])
+    return () => clearInterval(cycleInterval)
+  }, [isAutoCycle, allStartups.length, autoCycleSeconds, isDropdownOpen, handleNextStartup])
 
-  const toggleAutoCycle = () => {
-    const next = !isAutoCycle
-    setIsAutoCycle(next)
-    setAutoCycleProgress(0)
-    if (typeof window !== 'undefined') {
-      localStorage.setItem('dayone_tv_autocycle', String(next))
+  // Keyboard navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.target as HTMLElement)?.tagName === 'INPUT') return
+
+      if (e.key.toLowerCase() === 'f') {
+        e.preventDefault()
+        toggleFullscreen()
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault()
+        handleNextStartup()
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault()
+        handlePrevStartup()
+      } else if (e.key === ' ') {
+        e.preventDefault()
+        toggleAutoCycle()
+      }
     }
-  }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [handleNextStartup, handlePrevStartup])
 
   // Fullscreen Toggle
   const toggleFullscreen = () => {
@@ -217,437 +320,296 @@ export function CompanyTvDisplay({
     }
   }
 
-  // Keyboard Shortcuts
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
-        return
-      }
-      if (e.key === 'ArrowRight') {
-        e.preventDefault()
-        handleNextStartup()
-      } else if (e.key === 'ArrowLeft') {
-        e.preventDefault()
-        handlePrevStartup()
-      } else if (e.key.toLowerCase() === 'f') {
-        e.preventDefault()
-        toggleFullscreen()
-      } else if (e.key === ' ') {
-        e.preventDefault()
-        toggleAutoCycle()
-      }
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [handleNextStartup, handlePrevStartup])
+  const toggleAutoCycle = () => {
+    const next = !isAutoCycle
+    setIsAutoCycle(next)
+    setAutoCycleProgress(0)
+    localStorage.setItem('dayone_tv_autocycle', next ? 'true' : 'false')
+  }
 
+  const copyCurrentTvLink = () => {
+    if (typeof window !== 'undefined') {
+      const activeSlug = data.startup.name.toLowerCase().replace(/[^a-z0-9]+/g, '-')
+      const url = `${window.location.origin}/tv/${activeSlug}`
+      navigator.clipboard.writeText(url)
+      setCopiedUrl(true)
+      setTimeout(() => setCopiedUrl(false), 2500)
+    }
+  }
+
+  // Signature Warm Light Cream Theme Palette
+  const colors = {
+    bg: '#f6f2db',
+    canvasGradient: 'radial-gradient(circle at 50% -10%, #fcfbf5 0%, #f6f2db 100%)',
+    cardBg: '#ffffff',
+    cardBorder: '#e5dfcb',
+    cardHighlight: 'rgba(255, 255, 255, 0.9)',
+    headerBg: 'rgba(253, 251, 246, 0.94)',
+    textPrimary: '#1e1b18',
+    textSecondary: '#5a5348',
+    textMuted: '#8c8375',
+    brandRed: '#ca2f2b',
+    brandRedDim: 'rgba(202, 47, 43, 0.08)',
+    brandRedGlow: 'rgba(202, 47, 43, 0.22)',
+    gridLine: '#e6decb',
+    chartIdeal: '#aba196',
+    subtleCard: '#fbf9f1',
+    accentBlue: '#0369a1',
+    accentGreen: '#059669',
+    accentAmber: '#b45309',
+    accentPurple: '#6d28d9',
+  }
+
+  const { startup, sprint, metrics, charts, deliverables, recentActivity } = data
+
+  const statusBadgeConfig = {
+    AHEAD: { label: 'AHEAD OF SCHEDULE', bg: '#059669', color: '#ffffff' },
+    ON_TRACK: { label: 'ON TRACK', bg: '#0369a1', color: '#ffffff' },
+    BEHIND: { label: 'PACE BEHIND', bg: '#d97706', color: '#ffffff' },
+    AT_RISK: { label: 'AT RISK', bg: '#ca2f2b', color: '#ffffff' },
+  }[sprint.status]
+
+  // Filter startups for dropdown
   const filteredStartups = allStartups.filter((s) =>
-    s.name.toLowerCase().includes(companySearch.toLowerCase()) ||
-    (s.sector && s.sector.toLowerCase().includes(companySearch.toLowerCase()))
+    s.name.toLowerCase().includes(companySearch.toLowerCase())
   )
 
-  // Card base styles with true TV vertical density
-  const cardStyle: React.CSSProperties = {
-    background: '#ffffff',
-    borderRadius: 14,
-    border: '1px solid rgba(220, 210, 195, 0.75)',
-    boxShadow: '0 4px 16px -2px rgba(160, 130, 110, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.03)',
-    padding: '14px 18px',
-    display: 'flex',
-    flexDirection: 'column',
-    minHeight: 0,
-    position: 'relative',
-    overflow: 'hidden',
-  }
+  // Calculate Process Dashbar Values
+  const totalTasks = metrics.totalTasks
+  const donePercent = totalTasks > 0 ? Math.round((metrics.doneTasks / totalTasks) * 100) : 0
+  const inProgressPercent = totalTasks > 0 ? Math.round((metrics.inProgressTasks / totalTasks) * 100) : 0
+  const todoPercent = totalTasks > 0 ? Math.max(0, 100 - donePercent - inProgressPercent) : 0
+
+  // Calculate Sprint Expected Pace (Mon=0% -> Sun=100%)
+  const sprintTargetPace = Math.min(100, Math.max(0, Math.round(((7 - sprint.daysRemaining) / 7) * 100)))
+
+  const activeStartupObj = allStartups.find((s) => s.id === currentStartupId || s.name.toLowerCase() === startup.name.toLowerCase())
+  const activeLogoUrl = activeStartupObj?.logo_url || (startup as any).logo_url
 
   return (
     <div
       style={{
-        width: '100vw',
         height: '100vh',
         maxHeight: '100vh',
         overflow: 'hidden',
-        background: 'radial-gradient(ellipse at 50% 30%, #fffdfa 0%, #f7f0e3 60%, #eee2cf 100%)',
-        color: '#1e1b18',
-        fontFamily: "'Plus Jakarta Sans', var(--font-sans), sans-serif",
+        backgroundColor: colors.bg,
+        backgroundImage: colors.canvasGradient,
+        color: colors.textPrimary,
+        fontFamily: 'var(--font-sans)',
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-        padding: '12px 20px 8px 20px',
-        boxSizing: 'border-box',
-        position: 'relative',
         userSelect: 'none',
+        position: 'relative',
+        boxSizing: 'border-box',
       }}
     >
-      {/* ── AMBIENT 3D LIQUID ACCENTS (EXACT MATCH TO REFERENCE DESIGN) ── */}
-      {/* Top Left Subtle Liquid Curve */}
-      <svg
-        width="260"
-        height="180"
-        viewBox="0 0 260 180"
-        fill="none"
-        style={{
-          position: 'absolute',
-          top: -20,
-          left: -20,
-          pointerEvents: 'none',
-          zIndex: 0,
-          opacity: 0.5,
-        }}
-      >
-        <path
-          d="M-20 0 C40 40 80 120 240 70 C160 160 40 180 -20 120 Z"
-          fill="url(#ambientRedGrad1)"
-        />
-        <defs>
-          <linearGradient id="ambientRedGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#ca2f2b" stopOpacity="0.45" />
-            <stop offset="100%" stopColor="#fca5a5" stopOpacity="0" />
-          </linearGradient>
-        </defs>
-      </svg>
+      {/* ── Auto-Cycle Top Countdown Line ── */}
+      {isAutoCycle && (
+        <div
+          style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: 4,
+            zIndex: 100,
+            background: 'rgba(0, 0, 0, 0.08)',
+          }}
+        >
+          <div
+            style={{
+              height: '100%',
+              width: `${autoCycleProgress}%`,
+              background: 'linear-gradient(90deg, #ca2f2b 0%, #f59e0b 50%, #10b981 100%)',
+              boxShadow: '0 0 10px rgba(202, 47, 43, 0.8)',
+              transition: 'width 250ms linear',
+            }}
+          />
+        </div>
+      )}
 
-      {/* Bottom Right Glowing Glass Orb & Liquid Swirl */}
-      <svg
-        width="280"
-        height="220"
-        viewBox="0 0 280 220"
-        fill="none"
-        style={{
-          position: 'absolute',
-          bottom: -30,
-          right: -20,
-          pointerEvents: 'none',
-          zIndex: 0,
-          opacity: 0.6,
-        }}
-      >
-        <path
-          d="M40 220 C90 140 180 130 280 170 C240 220 160 230 40 220 Z"
-          fill="url(#ambientRedGrad2)"
-        />
-        <circle cx="210" cy="150" r="42" fill="url(#orbGrad)" />
-        <circle cx="195" cy="135" r="14" fill="#ffffff" fillOpacity="0.55" />
-        <defs>
-          <radialGradient id="orbGrad" cx="35%" cy="35%" r="65%">
-            <stop offset="0%" stopColor="#fecaca" stopOpacity="0.9" />
-            <stop offset="45%" stopColor="#ca2f2b" stopOpacity="0.7" />
-            <stop offset="100%" stopColor="#781014" stopOpacity="0.85" />
-          </radialGradient>
-          <linearGradient id="ambientRedGrad2" x1="0%" y1="100%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor="#ca2f2b" stopOpacity="0.6" />
-            <stop offset="100%" stopColor="#fecaca" stopOpacity="0.1" />
-          </linearGradient>
-        </defs>
-      </svg>
-
-      {/* ── HEADER ── */}
+      {/* ── 1. TV Executive Header Bar ── */}
       <header
         style={{
-          height: 56,
-          flexShrink: 0,
+          height: 60,
+          background: colors.headerBg,
+          borderBottom: `1px solid ${colors.cardBorder}`,
+          padding: '0 24px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          zIndex: 10,
-          position: 'relative',
+          flexShrink: 0,
+          backdropFilter: 'blur(16px)',
+          zIndex: 40,
         }}
       >
-        {/* Left: Brand Identity & Subtitles */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          <Link
-            href="/"
-            style={{
-              textDecoration: 'none',
-              display: 'flex',
-              flexDirection: 'column',
-              lineHeight: 0.95,
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'baseline' }}>
-              <span
-                style={{
-                  fontSize: 38,
-                  fontWeight: 900,
-                  color: '#9e1820',
-                  letterSpacing: '-1.4px',
-                  fontFamily: "'Plus Jakarta Sans', var(--font-sans), sans-serif",
-                }}
+        {/* Left: Studio Branding + Company Selector with Swapping Controls */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <Link href="/tv" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
+            <Logo size="icon" />
+            <div style={{ lineHeight: 1 }}>
+              <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: '-0.3px', color: colors.textPrimary }}>
+                DAY ONE
+              </div>
+              <div
+                className="font-serif-italic"
+                style={{ fontSize: 10, color: colors.textMuted, marginTop: 2 }}
               >
-                dayone
-              </span>
+                tv mission control
+              </div>
             </div>
-            <span
-              style={{
-                fontSize: 11.5,
-                fontWeight: 600,
-                color: '#9e1820',
-                fontFamily: 'var(--font-serif)',
-                fontStyle: 'italic',
-                letterSpacing: '0.2px',
-                marginTop: 2,
-              }}
-            >
-              venture studio by iQue
-            </span>
           </Link>
 
-          <div style={{ width: 1, height: 42, background: '#dcd2bd' }} />
+          <div style={{ height: 26, width: 1, background: colors.cardBorder }} />
 
-          <div>
-            <div
-              style={{
-                fontSize: 13,
-                fontWeight: 900,
-                color: '#9e1820',
-                letterSpacing: '1.8px',
-                textTransform: 'uppercase',
-              }}
-            >
-              VENTURE STUDIO DASHBOARD
-            </div>
-            <div
-              style={{
-                fontSize: 13.5,
-                fontWeight: 800,
-                color: '#26221f',
-                letterSpacing: '0.8px',
-                textTransform: 'uppercase',
-                lineHeight: 1.15,
-              }}
-            >
-              COMMON PERFORMANCE SYSTEM
-            </div>
-            <div
-              style={{
-                fontSize: 10.5,
-                color: '#736b5e',
-                fontWeight: 500,
-              }}
-            >
-              One system. Seven startups. Distinct journeys.
-            </div>
-          </div>
-        </div>
-
-        {/* Right: Startup Screen Dots & Spotlight Card */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3 }}>
-            <div
-              style={{
-                fontSize: 10,
-                fontWeight: 800,
-                color: '#4a443a',
-                letterSpacing: '0.9px',
-                textTransform: 'uppercase',
-              }}
-            >
-              STARTUP SCREEN 0{Math.max(1, currentStartupIndex + 1)} / 0{Math.max(7, allStartups.length)}
-            </div>
-
-            {/* 7-Dot Timeline Progress Indicator */}
+          {/* Company Identity & Swap Dropdown Trigger */}
+          <div style={{ position: 'relative' }} ref={dropdownRef}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              {Array.from({ length: Math.max(7, allStartups.length) }).map((_, idx) => {
-                const targetStartup = allStartups[idx]
-                const isSelected = idx === currentStartupIndex
-                return (
-                  <button
-                    key={idx}
-                    onClick={() => targetStartup && handleSelectStartup(targetStartup)}
-                    disabled={!targetStartup}
-                    style={{
-                      width: isSelected ? 22 : 7.5,
-                      height: 7.5,
-                      borderRadius: 100,
-                      background: isSelected ? '#9e1820' : '#dcd2bd',
-                      border: 'none',
-                      cursor: targetStartup ? 'pointer' : 'default',
-                      transition: 'all 0.2s ease',
-                      padding: 0,
-                    }}
-                    title={targetStartup ? `${targetStartup.name} (Screen 0${idx + 1})` : `Screen 0${idx + 1}`}
-                  />
-                )
-              })}
-            </div>
-
-            <div
-              style={{
-                fontSize: 9,
-                fontWeight: 700,
-                color: '#8c8270',
-                letterSpacing: '0.6px',
-                textTransform: 'uppercase',
-              }}
-            >
-              WEEKLY PERFORMANCE OVERVIEW
-            </div>
-          </div>
-
-          <div style={{ width: 1, height: 36, background: '#dcd2bd' }} />
-
-          {/* Quick Swap Arrows & Spotlight Card */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, position: 'relative' }} ref={dropdownRef}>
-            <button
-              onClick={handlePrevStartup}
-              title="Previous Startup (←)"
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 8,
-                background: '#ffffff',
-                border: '1px solid #dcd2bd',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                color: '#4a443a',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-              }}
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-
-            {/* Spotlight Card */}
-            <div
-              onClick={() => setIsDropdownOpen(!isDropdownOpen)}
-              style={{
-                background: '#ffffff',
-                border: '1px solid #dcd2bd',
-                borderRadius: 12,
-                padding: '5px 14px 5px 12px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 10,
-                cursor: 'pointer',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
-                transition: 'all 0.15s ease',
-              }}
-            >
-              <CompanyLogo logoUrl={data.startup.logo_url} name={data.startup.name} size={34} />
-              <div>
-                <div
+              {allStartups.length > 1 && (
+                <button
+                  onClick={handlePrevStartup}
+                  title="Previous Company (← Arrow)"
                   style={{
-                    fontSize: 8.5,
-                    fontWeight: 900,
-                    color: '#9e1820',
-                    letterSpacing: '0.8px',
-                    textTransform: 'uppercase',
+                    background: colors.subtleCard,
+                    border: `1px solid ${colors.cardBorder}`,
+                    color: colors.textSecondary,
+                    width: 32,
+                    height: 32,
+                    borderRadius: 8,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
                   }}
                 >
-                  STARTUP SPOTLIGHT
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+              )}
+
+              {/* Main Company Dropdown Trigger */}
+              <button
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                title="Click to switch company"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  background: isDropdownOpen ? colors.cardBorder : colors.subtleCard,
+                  border: `1px solid ${isDropdownOpen ? colors.brandRed : colors.cardBorder}`,
+                  padding: '4px 12px 4px 6px',
+                  borderRadius: 10,
+                  cursor: 'pointer',
+                  color: colors.textPrimary,
+                  transition: 'all 0.15s ease',
+                  textAlign: 'left',
+                }}
+              >
+                <CompanyLogo
+                  logoUrl={activeLogoUrl}
+                  name={startup.name}
+                  size={32}
+                />
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ fontSize: 13, fontWeight: 800, letterSpacing: '-0.2px' }}>
+                      {startup.name}
+                    </span>
+                    <ChevronDown className="w-3.5 h-3.5 text-stone-400" />
+                  </div>
+                  <div style={{ fontSize: 10, color: colors.accentGreen, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#059669', display: 'inline-block' }} />
+                    <span>{startup.status}</span>
+                    <span style={{ color: colors.textMuted }}>• Swap Company</span>
+                  </div>
                 </div>
-                <div style={{ fontSize: 14.5, fontWeight: 900, color: '#9e1820', lineHeight: 1.1 }}>
-                  {data.startup.name}
-                </div>
-                <div style={{ fontSize: 10, color: '#736b5e', fontWeight: 600 }}>
-                  {data.sector || 'Skincare / Beauty Tech'}
-                </div>
-              </div>
-              <ChevronDown className="w-3.5 h-3.5 text-stone-400" />
+              </button>
+
+              {allStartups.length > 1 && (
+                <button
+                  onClick={handleNextStartup}
+                  title="Next Company (→ Arrow)"
+                  style={{
+                    background: colors.subtleCard,
+                    border: `1px solid ${colors.cardBorder}`,
+                    color: colors.textSecondary,
+                    width: 32,
+                    height: 32,
+                    borderRadius: 8,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    cursor: 'pointer',
+                  }}
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              )}
             </div>
 
-            <button
-              onClick={handleNextStartup}
-              title="Next Startup (→)"
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 8,
-                background: '#ffffff',
-                border: '1px solid #dcd2bd',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                color: '#4a443a',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-              }}
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
-
-            {/* Fullscreen Toggle */}
-            <button
-              onClick={toggleFullscreen}
-              title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen (F)'}
-              style={{
-                width: 32,
-                height: 32,
-                borderRadius: 8,
-                background: '#ffffff',
-                border: '1px solid #dcd2bd',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                color: '#4a443a',
-                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
-                marginLeft: 2,
-              }}
-            >
-              {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
-            </button>
-
-            {/* Startup Swapper Dropdown */}
+            {/* Dropdown Menu */}
             {isDropdownOpen && (
               <div
                 style={{
                   position: 'absolute',
                   top: '100%',
-                  right: 0,
+                  left: 0,
                   marginTop: 6,
-                  width: 270,
-                  background: '#ffffff',
-                  border: '1px solid #dcd2bd',
+                  width: 300,
+                  background: colors.cardBg,
+                  border: `1px solid ${colors.cardBorder}`,
                   borderRadius: 12,
-                  boxShadow: '0 12px 32px rgba(0,0,0,0.12)',
+                  boxShadow: '0 12px 32px rgba(0, 0, 0, 0.15)',
                   padding: 10,
-                  zIndex: 99,
+                  zIndex: 100,
+                  backdropFilter: 'blur(20px)',
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, padding: '0 4px' }}>
-                  <span style={{ fontSize: 10.5, fontWeight: 900, color: '#8c8270', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
-                    Select Portfolio Startup
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 4px 6px', borderBottom: `1px solid ${colors.cardBorder}`, marginBottom: 6 }}>
+                  <span style={{ fontSize: 11, fontWeight: 800, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    Select Studio Startup
                   </span>
-                  <span style={{ fontSize: 10, color: '#9e1820', fontWeight: 800 }}>
+                  <span style={{ fontSize: 10, color: colors.brandRed, fontWeight: 700 }}>
                     {allStartups.length} Available
                   </span>
                 </div>
 
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    padding: '6px 9px',
-                    borderRadius: 8,
-                    background: '#fcfbf7',
-                    border: '1px solid #dcd2bd',
-                    marginBottom: 6,
-                  }}
-                >
-                  <Search className="w-3.5 h-3.5 text-stone-400" />
-                  <input
-                    type="text"
-                    placeholder="Search startups..."
-                    value={companySearch}
-                    onChange={(e) => setCompanySearch(e.target.value)}
+                {allStartups.length > 4 && (
+                  <div
                     style={{
-                      border: 'none',
-                      background: 'transparent',
-                      outline: 'none',
-                      fontSize: 11,
-                      color: '#1e1b18',
-                      width: '100%',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      background: colors.subtleCard,
+                      border: `1px solid ${colors.cardBorder}`,
+                      borderRadius: 7,
+                      padding: '5px 8px',
+                      marginBottom: 6,
                     }}
-                    autoFocus
-                  />
-                </div>
+                  >
+                    <Search className="w-3.5 h-3.5 text-stone-400" />
+                    <input
+                      type="text"
+                      placeholder="Filter startups..."
+                      value={companySearch}
+                      onChange={(e) => setCompanySearch(e.target.value)}
+                      style={{
+                        background: 'transparent',
+                        border: 'none',
+                        outline: 'none',
+                        fontSize: 11,
+                        color: colors.textPrimary,
+                        width: '100%',
+                      }}
+                      autoFocus
+                    />
+                  </div>
+                )}
 
-                <div style={{ maxHeight: 240, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 3 }}>
-                  {filteredStartups.map((s, idx) => {
-                    const isSelected = s.id === currentStartupId || s.name.toLowerCase() === data.startup.name.toLowerCase()
+                {/* Company Items */}
+                <div style={{ maxHeight: 260, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                  {filteredStartups.map((s) => {
+                    const isSelected = s.id === currentStartupId || s.name.toLowerCase() === startup.name.toLowerCase()
                     return (
                       <button
                         key={s.id}
@@ -656,920 +618,1181 @@ export function CompanyTvDisplay({
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
-                          padding: '7px 9px',
+                          padding: '7px 10px',
                           borderRadius: 8,
-                          background: isSelected ? 'rgba(158, 24, 32, 0.08)' : 'transparent',
-                          border: isSelected ? '1px solid #9e1820' : '1px solid transparent',
+                          background: isSelected ? 'rgba(202, 47, 43, 0.08)' : 'transparent',
+                          border: isSelected ? `1px solid ${colors.brandRed}` : '1px solid transparent',
                           cursor: 'pointer',
-                          color: '#1e1b18',
+                          color: colors.textPrimary,
                           textAlign: 'left',
                           width: '100%',
+                          transition: 'all 0.12s ease',
                         }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-                          <CompanyLogo logoUrl={s.logo_url} name={s.name} size={24} />
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
+                          <CompanyLogo
+                            logoUrl={s.logo_url}
+                            name={s.name}
+                            size={26}
+                          />
                           <div style={{ minWidth: 0 }}>
-                            <div style={{ fontSize: 12, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            <div style={{ fontSize: 12.5, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                               {s.name}
                             </div>
-                            <div style={{ fontSize: 9.5, color: '#736b5e' }}>
-                              {s.sector || 'Portfolio Startup'}
+                            <div style={{ fontSize: 10, color: colors.textMuted }}>
+                              {s.tasksCount ? `${s.tasksCount} sprint tasks` : 'Active feed'}
                             </div>
                           </div>
                         </div>
-                        <span style={{ fontSize: 9.5, color: '#8c8270', fontWeight: 700 }}>
-                          0{idx + 1}
-                        </span>
+
+                        {isSelected && <Check className="w-4 h-4 text-red-500" style={{ color: colors.brandRed }} />}
                       </button>
                     )
                   })}
+                </div>
+
+                {/* Footer link to Fleet Overview */}
+                <div style={{ borderTop: `1px solid ${colors.cardBorder}`, marginTop: 8, paddingTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <button
+                    onClick={() => {
+                      setIsDropdownOpen(false)
+                      setIsFleetModalOpen(true)
+                    }}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: colors.textSecondary,
+                      fontSize: 11,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      padding: 0,
+                    }}
+                  >
+                    <LayoutGrid className="w-3.5 h-3.5" />
+                    <span>View All Screen URLs</span>
+                  </button>
+                  <button
+                    onClick={copyCurrentTvLink}
+                    style={{
+                      background: 'none',
+                      border: 'none',
+                      color: colors.brandRed,
+                      fontSize: 11,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 4,
+                      padding: 0,
+                    }}
+                  >
+                    {copiedUrl ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                    <span>{copiedUrl ? 'Copied' : 'Copy TV Link'}</span>
+                  </button>
                 </div>
               </div>
             )}
           </div>
         </div>
+
+        {/* Center: Live Telemetry Stream + Auto-Cycle Carousel Control */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          {/* Live Radar Pulse */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8,
+              padding: '5px 14px',
+              borderRadius: 100,
+              background: '#ecfdf5',
+              border: '1px solid #a7f3d0',
+              fontSize: 11,
+              fontWeight: 700,
+              letterSpacing: '0.8px',
+              color: '#059669',
+            }}
+          >
+            <span
+              style={{
+                width: 7,
+                height: 7,
+                borderRadius: '50%',
+                background: '#059669',
+                boxShadow: '0 0 10px #059669',
+                display: 'inline-block',
+              }}
+            />
+            <span>LIVE TELEMETRY STREAM</span>
+            <span style={{ opacity: 0.6, fontSize: 10, fontFamily: 'var(--font-mono)' }}>
+              ({countdown}s)
+            </span>
+          </div>
+
+          {/* Auto-Cycle / Wall TV Carousel Toggle Button */}
+          {allStartups.length > 1 && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 4,
+                background: isAutoCycle ? '#fee2e2' : colors.cardBg,
+                border: `1px solid ${isAutoCycle ? colors.brandRed : colors.cardBorder}`,
+                padding: '4px 10px',
+                borderRadius: 100,
+                fontSize: 11,
+                fontWeight: 700,
+                color: isAutoCycle ? colors.brandRed : colors.textSecondary,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+              onClick={toggleAutoCycle}
+              title="Toggle automatic cycling between companies (Spacebar)"
+            >
+              {isAutoCycle ? (
+                <Pause className="w-3.5 h-3.5 text-red-500" />
+              ) : (
+                <Play className="w-3.5 h-3.5" />
+              )}
+              <span>Auto-Cycle: {isAutoCycle ? `${autoCycleSeconds}s` : 'OFF'}</span>
+
+              {isAutoCycle && (
+                <span
+                  style={{
+                    fontSize: 9.5,
+                    padding: '2px 6px',
+                    borderRadius: 10,
+                    background: colors.brandRed,
+                    color: '#ffffff',
+                    fontWeight: 800,
+                    marginLeft: 2,
+                  }}
+                >
+                  {currentStartupIndex + 1}/{allStartups.length}
+                </span>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Right: Wall Clock + TV Screen Utility Controls */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          {/* Wall Clock */}
+          <div style={{ textAlign: 'right', minWidth: 120 }}>
+            <div
+              style={{
+                fontSize: 16,
+                fontWeight: 800,
+                fontFamily: 'var(--font-mono)',
+                color: colors.textPrimary,
+                letterSpacing: '0.8px',
+                lineHeight: 1.1,
+              }}
+            >
+              {clock || '12:00:00'}
+            </div>
+            <div style={{ fontSize: 10, color: colors.textMuted, marginTop: 1 }}>
+              {clockDate}
+            </div>
+          </div>
+
+          <div style={{ height: 26, width: 1, background: colors.cardBorder }} />
+
+          {/* Action Buttons */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            {/* Manual Sync Telemetry */}
+            <button
+              onClick={() => fetchTelemetry()}
+              title="Force Sync Live Telemetry"
+              style={{
+                background: colors.subtleCard,
+                border: `1px solid ${colors.cardBorder}`,
+                color: colors.textSecondary,
+                width: 32,
+                height: 32,
+                borderRadius: 8,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+              }}
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-red-500' : ''}`} />
+            </button>
+
+            {/* Fullscreen Toggle */}
+            <button
+              onClick={toggleFullscreen}
+              title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen TV Mode (F)'}
+              style={{
+                background: colors.brandRed,
+                border: 'none',
+                color: '#ffffff',
+                height: 32,
+                padding: '0 12px',
+                borderRadius: 8,
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 6,
+                fontSize: 12,
+                fontWeight: 700,
+                boxShadow: `0 2px 8px ${colors.brandRedGlow}`,
+              }}
+            >
+              {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+              <span>{isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}</span>
+            </button>
+          </div>
+        </div>
       </header>
 
-      {/* ── MAIN 4-ROW + HERO GRID ── */}
+      {/* ── 2. TV Main Telemetry Canvas ── */}
       <main
         style={{
           flex: 1,
+          padding: '10px 22px',
+          display: 'flex',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          gap: 10,
+          maxWidth: 1920,
+          margin: '0 auto',
+          width: '100%',
+          boxSizing: 'border-box',
           minHeight: 0,
-          display: 'grid',
-          gridTemplateColumns: '1fr 300px',
-          gap: 12,
-          margin: '8px 0',
-          opacity: isSwitching ? 0.35 : 1,
-          transition: 'opacity 0.15s ease',
-          position: 'relative',
-          zIndex: 1,
+          opacity: isSwitching ? 0.3 : 1,
+          transition: 'opacity 0.2s ease-in-out',
         }}
       >
-        {/* ── LEFT COLUMN: 4 EQUALLY BALANCED HORIZONTAL ROWS ── */}
+        {/* ── Sprint North Star Banner ── */}
         <div
           style={{
+            background: colors.cardBg,
+            border: `1px solid ${colors.cardBorder}`,
+            borderRadius: 14,
+            padding: '10px 18px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+            flexShrink: 0,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 0 }}>
+            <div
+              style={{
+                width: 36,
+                height: 36,
+                borderRadius: 10,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <CompanyLogo
+                logoUrl={activeLogoUrl}
+                name={startup.name}
+                size={36}
+              />
+            </div>
+
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div
+                style={{
+                  fontSize: 10,
+                  fontWeight: 800,
+                  textTransform: 'uppercase',
+                  letterSpacing: '1px',
+                  color: colors.brandRed,
+                  marginBottom: 2,
+                }}
+              >
+                Sprint North Star Objective — {startup.name}
+              </div>
+              <div
+                className="font-serif-italic"
+                style={{
+                  fontSize: 15,
+                  fontWeight: 600,
+                  color: colors.textPrimary,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                &ldquo;{sprint.goal}&rdquo;
+              </div>
+            </div>
+          </div>
+
+          {/* Sprint Details Chips */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
+            <div
+              style={{
+                padding: '4px 12px',
+                borderRadius: 8,
+                background: statusBadgeConfig.bg,
+                color: statusBadgeConfig.color,
+                fontSize: 11,
+                fontWeight: 800,
+                letterSpacing: '0.6px',
+                textTransform: 'uppercase',
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+              }}
+            >
+              {statusBadgeConfig.label}
+            </div>
+
+            <div
+              style={{
+                padding: '4px 12px',
+                borderRadius: 8,
+                background: colors.subtleCard,
+                border: `1px solid ${colors.cardBorder}`,
+                fontSize: 11.5,
+                fontWeight: 600,
+                color: colors.textSecondary,
+              }}
+            >
+              {sprint.daysRemaining}d Remaining in Sprint
+            </div>
+
+            <div
+              style={{
+                padding: '4px 12px',
+                borderRadius: 8,
+                background: colors.subtleCard,
+                border: `1px solid ${colors.cardBorder}`,
+                fontSize: 11.5,
+                color: colors.textMuted,
+              }}
+            >
+              {sprint.weekStart} → {sprint.weekEnd}
+            </div>
+          </div>
+        </div>
+
+        {/* ── 3. Dedicated Process & Execution Dashbar (Full Width) ── */}
+        <div
+          style={{
+            background: colors.cardBg,
+            border: `1px solid ${colors.cardBorder}`,
+            borderRadius: 14,
+            padding: '12px 18px',
+            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
             display: 'flex',
             flexDirection: 'column',
             gap: 10,
-            height: '100%',
+            flexShrink: 0,
+          }}
+        >
+          {/* Dashbar Header with Stages */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              <Activity className="w-4 h-4 text-emerald-500" />
+              <span style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '0.6px', textTransform: 'uppercase' }}>
+                Sprint Process & Execution Pipeline
+              </span>
+            </div>
+
+            {/* Pipeline Stage Indicators */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+              {/* Stage 1: Backlog / Todo */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11.5 }}>
+                <span
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: '50%',
+                    background: '#a1a1aa',
+                  }}
+                />
+                <span style={{ color: colors.textMuted }}>Backlog (TODO):</span>
+                <span style={{ fontWeight: 800, color: colors.textPrimary }}>
+                  {metrics.todoTasks} ({todoPercent}%)
+                </span>
+              </div>
+
+              {/* Stage 2: Active / In Progress */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11.5 }}>
+                <span
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: '50%',
+                    background: '#0284c7',
+                    boxShadow: '0 0 8px #0284c7',
+                  }}
+                />
+                <span style={{ color: colors.accentBlue, fontWeight: 600 }}>Active Execution:</span>
+                <span style={{ fontWeight: 800, color: '#0284c7' }}>
+                  {metrics.inProgressTasks} ({inProgressPercent}%)
+                </span>
+              </div>
+
+              {/* Stage 3: Completed / Done */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11.5 }}>
+                <span
+                  style={{
+                    width: 8,
+                    height: 8,
+                    borderRadius: '50%',
+                    background: '#059669',
+                    boxShadow: '0 0 8px #059669',
+                  }}
+                />
+                <span style={{ color: '#059669', fontWeight: 600 }}>Delivered:</span>
+                <span style={{ fontWeight: 800, color: '#059669' }}>
+                  {metrics.doneTasks} ({donePercent}%)
+                </span>
+              </div>
+
+              {/* Pace Target Comparison */}
+              <div
+                style={{
+                  padding: '3px 8px',
+                  borderRadius: 6,
+                  background: colors.subtleCard,
+                  border: `1px solid ${colors.cardBorder}`,
+                  fontSize: 10.5,
+                  color: colors.textSecondary,
+                  fontWeight: 600,
+                }}
+              >
+                Target Pace: <span style={{ color: colors.textPrimary, fontWeight: 800 }}>{sprintTargetPace}%</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Continuous Multi-Segment Process Bar */}
+          <div
+            style={{
+              height: 12,
+              borderRadius: 6,
+              background: '#ede7cf',
+              display: 'flex',
+              overflow: 'hidden',
+              boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.08)',
+              position: 'relative',
+            }}
+          >
+            {/* Done Segment */}
+            {donePercent > 0 && (
+              <div
+                style={{
+                  width: `${donePercent}%`,
+                  height: '100%',
+                  background: 'linear-gradient(90deg, #059669 0%, #10b981 100%)',
+                  transition: 'width 0.4s ease',
+                }}
+                title={`Delivered: ${donePercent}%`}
+              />
+            )}
+
+            {/* In Progress Segment */}
+            {inProgressPercent > 0 && (
+              <div
+                style={{
+                  width: `${inProgressPercent}%`,
+                  height: '100%',
+                  background: 'linear-gradient(90deg, #0284c7 0%, #38bdf8 100%)',
+                  transition: 'width 0.4s ease',
+                }}
+                title={`Active: ${inProgressPercent}%`}
+              />
+            )}
+
+            {/* Todo / Backlog Segment */}
+            {todoPercent > 0 && (
+              <div
+                style={{
+                  width: `${todoPercent}%`,
+                  height: '100%',
+                  background: '#d5ceb3',
+                  transition: 'width 0.4s ease',
+                }}
+                title={`Backlog: ${todoPercent}%`}
+              />
+            )}
+          </div>
+
+          {/* Functional Domain Readiness Footnote */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 10.5, color: colors.textMuted }}>
+            <div>
+              <span style={{ fontWeight: 700, color: colors.textSecondary }}>FUNCTIONAL READINESS: </span>
+              {charts.domains.length > 0 ? (
+                charts.domains.map((dom, i) => (
+                  <span key={dom.name}>
+                    {dom.name} ({dom.rate}%){i < charts.domains.length - 1 ? ' • ' : ''}
+                  </span>
+                ))
+              ) : (
+                <span>No domains configured yet</span>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ── 4. Key Performance Indicators (5 Metric Tiles Across Width) ── */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(5, 1fr)',
+            gap: 10,
+            flexShrink: 0,
+          }}
+        >
+          {/* Tile 1: Sprint Completion Percentage */}
+          <div
+            style={{
+              background: colors.cardBg,
+              border: `1px solid ${colors.cardBorder}`,
+              borderRadius: 14,
+              padding: '12px 16px',
+              boxShadow: '0 2px 6px rgba(0, 0, 0, 0.03)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+            }}
+          >
+            <div>
+              <div style={{ fontSize: 10, fontWeight: 700, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                Sprint Completion
+              </div>
+              <div style={{ fontSize: 30, fontWeight: 900, letterSpacing: '-1px', color: colors.brandRed, lineHeight: 1.1, marginTop: 3 }}>
+                {metrics.completionRate}%
+              </div>
+              <div style={{ fontSize: 10.5, color: colors.textSecondary, marginTop: 3 }}>
+                {metrics.doneTasks} of {metrics.totalTasks} Tasks Done
+              </div>
+            </div>
+
+            {/* Circular Progress Ring */}
+            <div style={{ position: 'relative', width: 44, height: 44, flexShrink: 0 }}>
+              <svg width="44" height="44" viewBox="0 0 36 36">
+                <path
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  fill="none"
+                  stroke="#ede7cf"
+                  strokeWidth="3.8"
+                />
+                <path
+                  d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
+                  fill="none"
+                  stroke={colors.brandRed}
+                  strokeWidth="3.8"
+                  strokeDasharray={`${metrics.completionRate}, 100`}
+                />
+              </svg>
+              <div
+                style={{
+                  position: 'absolute',
+                  inset: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: 9.5,
+                  fontWeight: 800,
+                  color: colors.textPrimary,
+                }}
+              >
+                {metrics.completionRate}%
+              </div>
+            </div>
+          </div>
+
+          {/* Tile 2: Active Deliverables */}
+          <div
+            style={{
+              background: colors.cardBg,
+              border: `1px solid ${colors.cardBorder}`,
+              borderRadius: 14,
+              padding: '12px 16px',
+              boxShadow: '0 2px 6px rgba(0, 0, 0, 0.03)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                Active Execution
+              </div>
+              <Clock className="w-4 h-4 text-sky-500" />
+            </div>
+            <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: '-1px', color: '#0284c7', lineHeight: 1.1, marginTop: 3 }}>
+              {metrics.inProgressTasks}
+            </div>
+            <div style={{ fontSize: 10.5, color: colors.textSecondary, marginTop: 3 }}>
+              Tasks In Progress Now
+            </div>
+          </div>
+
+          {/* Tile 3: Early & On-Time Velocity */}
+          <div
+            style={{
+              background: colors.cardBg,
+              border: `1px solid ${colors.cardBorder}`,
+              borderRadius: 14,
+              padding: '12px 16px',
+              boxShadow: '0 2px 6px rgba(0, 0, 0, 0.03)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                Early Deliveries
+              </div>
+              <Zap className="w-4 h-4 text-emerald-500" />
+            </div>
+            <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: '-1px', color: '#059669', lineHeight: 1.1, marginTop: 3 }}>
+              {metrics.earlyCount}
+            </div>
+            <div style={{ fontSize: 10.5, color: colors.textSecondary, marginTop: 3 }}>
+              +{metrics.onTimeCount} On-Time Completions
+            </div>
+          </div>
+
+          {/* Tile 4: Domain Coverage */}
+          <div
+            style={{
+              background: colors.cardBg,
+              border: `1px solid ${colors.cardBorder}`,
+              borderRadius: 14,
+              padding: '12px 16px',
+              boxShadow: '0 2px 6px rgba(0, 0, 0, 0.03)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                Domain Pillars
+              </div>
+              <Layers className="w-4 h-4 text-purple-500" />
+            </div>
+            <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: '-1px', color: '#7c3aed', lineHeight: 1.1, marginTop: 3 }}>
+              {metrics.domainsCount}
+            </div>
+            <div style={{ fontSize: 10.5, color: colors.textSecondary, marginTop: 3 }}>
+              Functional Areas Active
+            </div>
+          </div>
+
+          {/* Tile 5: Operators on Deck */}
+          <div
+            style={{
+              background: colors.cardBg,
+              border: `1px solid ${colors.cardBorder}`,
+              borderRadius: 14,
+              padding: '12px 16px',
+              boxShadow: '0 2px 6px rgba(0, 0, 0, 0.03)',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <div style={{ fontSize: 10, fontWeight: 700, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                Startup Staff
+              </div>
+              <Users2 className="w-4 h-4 text-amber-500" />
+            </div>
+            <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: '-1px', color: '#d97706', lineHeight: 1.1, marginTop: 3 }}>
+              {metrics.operatorsCount}
+            </div>
+            <div style={{ fontSize: 10.5, color: colors.textSecondary, marginTop: 3 }}>
+              Team Members Operating
+            </div>
+          </div>
+        </div>
+
+        {/* ── 5. Charts Core (Burndown Trajectory AreaChart + Domain BarChart) ── */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '62% 38%',
+            gap: 12,
+            flex: 1,
             minHeight: 0,
           }}
         >
-          {/* ══════════════════════════════════════════════════════════
-              ROW 1 (Height: ~18%): 4 Cards
-              Current Stage | Overall Health | Sprint Priorities | Completed
-             ══════════════════════════════════════════════════════════ */}
+          {/* Chart 1: Sprint Velocity Burndown Trajectory */}
           <div
             style={{
-              height: '18%',
+              background: colors.cardBg,
+              border: `1px solid ${colors.cardBorder}`,
+              borderRadius: 14,
+              padding: '14px 18px',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
               minHeight: 0,
-              display: 'grid',
-              gridTemplateColumns: '1.15fr 1.6fr 1.05fr 1.1fr',
-              gap: 10,
             }}
           >
-            {/* Card 1.1: Current Stage */}
-            <div style={cardStyle}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Layers style={{ width: 16, height: 16, color: '#9e1820' }} />
-                <span style={{ fontSize: 12.5, fontWeight: 800, color: '#1e1b18' }}>Current Stage</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <TrendingUp className="w-4 h-4 text-red-500" />
+                <h3 style={{ fontSize: 13, fontWeight: 800, letterSpacing: '-0.2px' }}>
+                  Weekly Burndown & Execution Trajectory
+                </h3>
               </div>
-
-              {/* Centered Segmented Pill Selector: MVP | GTM | Growth */}
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
-                <div
-                  style={{
-                    width: '100%',
-                    display: 'flex',
-                    alignItems: 'center',
-                    background: '#f8f5ed',
-                    borderRadius: 100,
-                    padding: '4px 6px',
-                    border: '1px solid #e8e2d4',
-                    justifyContent: 'space-between',
-                  }}
-                >
-                  {(['MVP', 'GTM', 'Growth'] as const).map((stg) => {
-                    const isActive = (data.stage || 'Growth') === stg
-                    return (
-                      <div
-                        key={stg}
-                        style={{
-                          padding: '6px 20px',
-                          borderRadius: 100,
-                          fontSize: 12.5,
-                          fontWeight: 800,
-                          background: isActive ? '#9e1820' : 'transparent',
-                          color: isActive ? '#ffffff' : '#736b5e',
-                          boxShadow: isActive ? '0 2px 8px rgba(158, 24, 32, 0.3)' : 'none',
-                          letterSpacing: '0.4px',
-                          transition: 'all 0.15s ease',
-                        }}
-                      >
-                        {stg}
-                      </div>
-                    )
-                  })}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, fontSize: 11 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <span style={{ width: 10, height: 3, background: colors.chartIdeal, borderRadius: 2 }} />
+                  <span style={{ color: colors.textMuted }}>Target Pace</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                  <span style={{ width: 10, height: 3, background: colors.brandRed, borderRadius: 2 }} />
+                  <span style={{ color: colors.brandRed, fontWeight: 700 }}>Actual Work</span>
                 </div>
               </div>
             </div>
 
-            {/* Card 1.2: Overall Health */}
-            <div style={cardStyle}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <Heart style={{ width: 16, height: 16, color: '#9e1820' }} />
-                  <span style={{ fontSize: 12.5, fontWeight: 800, color: '#1e1b18' }}>Overall Health</span>
-                </div>
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 5,
-                    fontSize: 11,
-                    fontWeight: 700,
-                    color: '#059669',
-                  }}
-                >
-                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#059669' }} />
-                  <span>{data.healthScore?.status || 'On Track'}</span>
-                </div>
-              </div>
-
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 6 }}>
-                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-                  <div>
-                    <span style={{ fontSize: 44, fontWeight: 900, color: '#1e1b18', lineHeight: 1 }}>
-                      {data.healthScore?.score || 76}
-                    </span>
-                    <span style={{ fontSize: 18, fontWeight: 700, color: '#8c8270', marginLeft: 3 }}>/100</span>
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 11.5,
-                      color: '#736b5e',
-                      fontStyle: 'italic',
-                      fontFamily: 'var(--font-serif)',
-                      maxWidth: '55%',
-                      textAlign: 'right',
-                      lineHeight: 1.25,
-                    }}
-                  >
-                    {data.healthScore?.motto || 'Building something brighter.'}
-                  </div>
-                </div>
-
-                <div style={{ width: '100%', height: 9, borderRadius: 100, background: '#fae8e8', overflow: 'hidden' }}>
-                  <div
-                    style={{
-                      width: `${data.healthScore?.score || 76}%`,
-                      height: '100%',
-                      borderRadius: 100,
-                      background: 'linear-gradient(90deg, #9e1820 0%, #ca2f2b 100%)',
+            <div style={{ flex: 1, minHeight: 0, width: '100%' }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={charts.burndown} margin={{ top: 8, right: 12, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="tvRedGradient" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor={colors.brandRed} stopOpacity={0.25} />
+                      <stop offset="95%" stopColor={colors.brandRed} stopOpacity={0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke={colors.gridLine} />
+                  <XAxis dataKey="day" tick={{ fill: colors.textMuted, fontSize: 11 }} axisLine={{ stroke: colors.gridLine }} />
+                  <YAxis tick={{ fill: colors.textMuted, fontSize: 11 }} axisLine={{ stroke: colors.gridLine }} allowDecimals={false} />
+                  <Tooltip
+                    contentStyle={{
+                      backgroundColor: colors.cardBg,
+                      borderColor: colors.cardBorder,
+                      borderRadius: 8,
+                      color: colors.textPrimary,
+                      fontSize: 12,
                     }}
                   />
-                </div>
-              </div>
-            </div>
-
-            {/* Card 1.3: This Week's Priorities */}
-            <div style={cardStyle}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <ListOrdered style={{ width: 16, height: 16, color: '#9e1820' }} />
-                <span style={{ fontSize: 12.5, fontWeight: 800, color: '#1e1b18' }}>This Week&apos;s Priorities</span>
-              </div>
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', paddingLeft: 4 }}>
-                <div style={{ fontSize: 54, fontWeight: 900, color: '#1e1b18', lineHeight: 1 }}>
-                  {data.priorities?.total || 5}
-                </div>
-              </div>
-            </div>
-
-            {/* Card 1.4: Completed */}
-            <div style={cardStyle}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <CheckCircle2 style={{ width: 16, height: 16, color: '#9e1820' }} />
-                <span style={{ fontSize: 12.5, fontWeight: 800, color: '#1e1b18' }}>Completed</span>
-              </div>
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', paddingLeft: 4 }}>
-                <div style={{ fontSize: 46, fontWeight: 900, color: '#1e1b18', lineHeight: 1 }}>
-                  {data.priorities?.completed || 4} of {data.priorities?.total || 5}
-                </div>
-              </div>
+                  <Area
+                    isAnimationActive={false}
+                    type="monotone"
+                    dataKey="ideal"
+                    name="Target Remaining"
+                    stroke={colors.chartIdeal}
+                    strokeWidth={1.5}
+                    strokeDasharray="4 4"
+                    fill="transparent"
+                  />
+                  <Area
+                    isAnimationActive={false}
+                    connectNulls={true}
+                    type="monotone"
+                    dataKey="actual"
+                    name="Actual Remaining"
+                    stroke={colors.brandRed}
+                    strokeWidth={3}
+                    fill="url(#tvRedGradient)"
+                    dot={{ fill: colors.brandRed, r: 4 }}
+                    activeDot={{ r: 6 }}
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
             </div>
           </div>
 
-          {/* ══════════════════════════════════════════════════════════
-              ROW 2 (Height: ~26%): 3 Cards
-              Weekly Execution | Monthly Target | Financials (This Month)
-             ══════════════════════════════════════════════════════════ */}
+          {/* Chart 2: Domain Throughput Bar Chart */}
           <div
             style={{
-              height: '26%',
+              background: colors.cardBg,
+              border: `1px solid ${colors.cardBorder}`,
+              borderRadius: 14,
+              padding: '14px 18px',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
               minHeight: 0,
-              display: 'grid',
-              gridTemplateColumns: '1.05fr 1.15fr 1.25fr',
-              gap: 10,
             }}
           >
-            {/* Card 2.1: Weekly Execution */}
-            <div style={cardStyle}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <div style={{ width: 16, height: 16, borderRadius: '50%', border: '2.5px solid #9e1820', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#9e1820' }} />
-                </div>
-                <span style={{ fontSize: 13, fontWeight: 800, color: '#1e1b18' }}>Weekly Execution</span>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Layers className="w-4 h-4 text-purple-500" />
+                <h3 style={{ fontSize: 13, fontWeight: 800, letterSpacing: '-0.2px' }}>
+                  Domain Throughput
+                </h3>
               </div>
+              <span style={{ fontSize: 10.5, color: colors.textMuted }}>Task Delivery</span>
+            </div>
 
-              <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 20 }}>
-                {/* SVG Radial Donut Meter */}
-                <div style={{ position: 'relative', width: 96, height: 96, flexShrink: 0 }}>
-                  <svg width="96" height="96" viewBox="0 0 54 54">
-                    <circle cx="27" cy="27" r="21" fill="none" stroke="#fae8e8" strokeWidth="6.5" />
-                    <circle
-                      cx="27"
-                      cy="27"
-                      r="21"
-                      fill="none"
-                      stroke="#9e1820"
-                      strokeWidth="6.5"
-                      strokeDasharray={`${(data.priorities?.rate || 80) * 1.319} 132`}
-                      strokeDashoffset="33"
-                      strokeLinecap="round"
+            <div style={{ flex: 1, minHeight: 0, width: '100%' }}>
+              {charts.domains.length === 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', color: colors.textMuted, fontSize: 12 }}>
+                  <Layers className="w-8 h-8 opacity-40 mb-2" />
+                  <span>Configure domains to track functional throughput</span>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={charts.domains} margin={{ top: 8, right: 12, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={colors.gridLine} />
+                    <XAxis dataKey="name" tick={{ fill: colors.textMuted, fontSize: 10.5 }} axisLine={{ stroke: colors.gridLine }} />
+                    <YAxis tick={{ fill: colors.textMuted, fontSize: 10.5 }} axisLine={{ stroke: colors.gridLine }} allowDecimals={false} />
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: colors.cardBg,
+                        borderColor: colors.cardBorder,
+                        borderRadius: 8,
+                        color: colors.textPrimary,
+                        fontSize: 12,
+                      }}
                     />
-                  </svg>
+                    <Legend wrapperStyle={{ fontSize: 10.5, color: colors.textMuted }} />
+                    <Bar isAnimationActive={false} dataKey="done" name="Completed" fill="#059669" radius={[4, 4, 0, 0]} />
+                    <Bar isAnimationActive={false} dataKey="inProgress" name="Active" fill="#0284c7" radius={[4, 4, 0, 0]} />
+                    <Bar isAnimationActive={false} dataKey="todo" name="Backlog" fill="#d5ceb3" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* ── 6. Bottom Row: Sprint Deliverables Radar + Delivery Quality Mix ── */}
+        <div
+          style={{
+            display: 'grid',
+            gridTemplateColumns: '62% 38%',
+            gap: 12,
+            height: '24%',
+            minHeight: 140,
+            flexShrink: 0,
+          }}
+        >
+          {/* Active Deliverables Radar */}
+          <div
+            style={{
+              background: colors.cardBg,
+              border: `1px solid ${colors.cardBorder}`,
+              borderRadius: 14,
+              padding: '12px 18px',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+              minHeight: 0,
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Activity className="w-4 h-4 text-emerald-500" />
+                <h3 style={{ fontSize: 12.5, fontWeight: 800 }}>Sprint Deliverables Radar</h3>
+              </div>
+              <span style={{ fontSize: 10.5, color: colors.textMuted }}>Active Sprint Backlog</span>
+            </div>
+
+            {deliverables.length === 0 ? (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', flex: 1, color: colors.textMuted, fontSize: 12 }}>
+                No deliverables registered for current weekly sprint
+              </div>
+            ) : (
+              <div
+                style={{
+                  display: 'grid',
+                  gridTemplateColumns: 'repeat(2, 1fr)',
+                  gap: 8,
+                  overflowY: 'auto',
+                  flex: 1,
+                  minHeight: 0,
+                }}
+              >
+                {deliverables.map((task) => (
                   <div
+                    key={task.id}
                     style={{
-                      position: 'absolute',
-                      inset: 0,
+                      padding: '7px 10px',
+                      background: colors.subtleCard,
+                      border: `1px solid ${colors.cardBorder}`,
+                      borderRadius: 8,
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: 20,
-                      fontWeight: 900,
-                      color: '#1e1b18',
+                      justifyContent: 'space-between',
+                      gap: 8,
                     }}
                   >
-                    {data.priorities?.rate || 80}%
-                  </div>
-                </div>
-
-                {/* Right Caption */}
-                <div>
-                  <div
-                    style={{
-                      fontSize: 14,
-                      fontWeight: 900,
-                      color: '#9e1820',
-                      letterSpacing: '0.8px',
-                      textTransform: 'uppercase',
-                    }}
-                  >
-                    CONSISTENT MOMENTUM
-                  </div>
-                  <div style={{ fontSize: 12, color: '#736b5e', lineHeight: 1.35, marginTop: 4 }}>
-                    Ideas to impact, week by week.
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Card 2.2: Monthly Target */}
-            <div style={cardStyle}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Target style={{ width: 16, height: 16, color: '#9e1820' }} />
-                <span style={{ fontSize: 13, fontWeight: 800, color: '#1e1b18' }}>Monthly Target</span>
-              </div>
-
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 14 }}>
-                <div style={{ fontSize: 48, fontWeight: 900, color: '#1e1b18', lineHeight: 1 }}>
-                  {data.financials?.monthlyTarget || '₹10L'}
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                  <span style={{ fontSize: 14, fontWeight: 800, color: '#1e1b18', whiteSpace: 'nowrap' }}>
-                    Achieved: {data.financials?.achievedAmount || '₹7.2L'}
-                  </span>
-                  <div style={{ flex: 1, height: 9, borderRadius: 100, background: '#fae8e8', overflow: 'hidden' }}>
-                    <div
-                      style={{
-                        width: `${data.financials?.targetRate || 72}%`,
-                        height: '100%',
-                        background: 'linear-gradient(90deg, #9e1820 0%, #ca2f2b 100%)',
-                      }}
-                    />
-                  </div>
-                  <span style={{ fontSize: 13, fontWeight: 800, color: '#1e1b18' }}>
-                    {data.financials?.targetRate || 72}%
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Card 2.3: Financials (This Month) + Integrated Runway */}
-            <div style={cardStyle}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <BarChart3 style={{ width: 16, height: 16, color: '#9e1820' }} />
-                <span style={{ fontSize: 13, fontWeight: 800, color: '#1e1b18' }}>Financials (This Month)</span>
-              </div>
-
-              <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1.25fr 1fr', gap: 16, alignItems: 'center' }}>
-                {/* Left: Revenue vs Burn */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                  <div>
-                    <div style={{ fontSize: 11, color: '#736b5e' }}>Revenue</div>
-                    <div style={{ fontSize: 22, fontWeight: 900, color: '#1e1b18', marginTop: 2 }}>
-                      {data.financials?.revenue || '₹7.2L'}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div
+                        style={{
+                          fontSize: 11.5,
+                          fontWeight: 700,
+                          color: colors.textPrimary,
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {task.title}
+                      </div>
+                      <div style={{ fontSize: 9.5, color: colors.textMuted, marginTop: 1, display: 'flex', gap: 6 }}>
+                        <span style={{ color: colors.brandRed, fontWeight: 600 }}>{task.domainName}</span>
+                        <span>•</span>
+                        <span>{task.assigneeName}</span>
+                      </div>
                     </div>
-                    <div style={{ width: '100%', height: 46, background: '#9e1820', borderRadius: 5, marginTop: 6 }} />
-                  </div>
-                  <div>
-                    <div style={{ fontSize: 11, color: '#736b5e' }}>Burn</div>
-                    <div style={{ fontSize: 22, fontWeight: 900, color: '#1e1b18', marginTop: 2 }}>
-                      {data.financials?.burn || '₹3.1L'}
-                    </div>
-                    <div style={{ width: '100%', height: 46, background: '#fca5a5', borderRadius: 5, marginTop: 6 }} />
-                  </div>
-                </div>
 
-                {/* Right: Runway Column */}
-                <div style={{ borderLeft: '1px solid #eee5d3', paddingLeft: 16 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <Hourglass style={{ width: 14, height: 14, color: '#9e1820' }} />
-                    <span style={{ fontSize: 13, fontWeight: 800, color: '#1e1b18' }}>Runway</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginTop: 6 }}>
-                    <span style={{ fontSize: 40, fontWeight: 900, color: '#1e1b18', lineHeight: 1 }}>
-                      {data.financials?.runwayMonths || 8}
-                    </span>
-                    <span style={{ fontSize: 16, fontWeight: 800, color: '#1e1b18' }}>Months</span>
-                  </div>
-                  <div style={{ fontSize: 11, color: '#059669', fontWeight: 600, marginTop: 4, lineHeight: 1.25 }}>
-                    {data.financials?.runwayStatus || 'Solid runway to scale.'}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* ══════════════════════════════════════════════════════════
-              ROW 3 (Height: ~28%): 3 Cards
-              Growth Metrics | Leads & Customers Trend | Quadrant Key Milestones
-             ══════════════════════════════════════════════════════════ */}
-          <div
-            style={{
-              height: '28%',
-              minHeight: 0,
-              display: 'grid',
-              gridTemplateColumns: '1.05fr 1.25fr 1.15fr',
-              gap: 10,
-            }}
-          >
-            {/* Card 3.1: Growth Metrics (This Week) */}
-            <div style={cardStyle}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <TrendingUp style={{ width: 16, height: 16, color: '#9e1820' }} />
-                <span style={{ fontSize: 13, fontWeight: 800, color: '#1e1b18' }}>Growth Metrics (This Week)</span>
-              </div>
-
-              <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, alignItems: 'center' }}>
-                <div>
-                  <div style={{ fontSize: 11.5, color: '#736b5e' }}>Leads</div>
-                  <div style={{ fontSize: 34, fontWeight: 900, color: '#1e1b18', lineHeight: 1.05, marginTop: 4 }}>
-                    {data.growth?.leads || 840}
-                  </div>
-                  <div style={{ fontSize: 11.5, fontWeight: 800, color: '#059669', marginTop: 4 }}>
-                    ▲ {data.growth?.leadsChange || '+18%'}
-                  </div>
-                  <div style={{ fontSize: 10, color: '#8c8270' }}>vs last week</div>
-                </div>
-
-                <div>
-                  <div style={{ fontSize: 11.5, color: '#736b5e' }}>Customers</div>
-                  <div style={{ fontSize: 34, fontWeight: 900, color: '#1e1b18', lineHeight: 1.05, marginTop: 4 }}>
-                    {data.growth?.customers || 126}
-                  </div>
-                  <div style={{ fontSize: 11.5, fontWeight: 800, color: '#059669', marginTop: 4 }}>
-                    ▲ {data.growth?.customersChange || '+24%'}
-                  </div>
-                  <div style={{ fontSize: 10, color: '#8c8270' }}>vs last week</div>
-                </div>
-
-                <div>
-                  <div style={{ fontSize: 11.5, color: '#736b5e' }}>CAC</div>
-                  <div style={{ fontSize: 34, fontWeight: 900, color: '#1e1b18', lineHeight: 1.05, marginTop: 4 }}>
-                    {data.growth?.cac || '₹420'}
-                  </div>
-                  <div style={{ fontSize: 11.5, fontWeight: 800, color: '#059669', marginTop: 4 }}>
-                    ▼ {data.growth?.cacChange || '+12%'}
-                  </div>
-                  <div style={{ fontSize: 10, color: '#8c8270' }}>vs last week</div>
-                </div>
-              </div>
-            </div>
-
-            {/* Card 3.2: Leads & Customers Trend */}
-            <div style={cardStyle}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <BarChart3 style={{ width: 16, height: 16, color: '#9e1820' }} />
-                  <span style={{ fontSize: 13, fontWeight: 800, color: '#1e1b18' }}>Leads & Customers Trend</span>
-                </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 10.5 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#9e1820' }} />
-                    <span style={{ color: '#736b5e' }}>Leads</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#fca5a5' }} />
-                    <span style={{ color: '#736b5e' }}>Customers</span>
-                  </div>
-                </div>
-              </div>
-
-              <div style={{ flex: 1, minHeight: 0, width: '100%', display: 'flex', alignItems: 'center' }}>
-                <div style={{ width: '100%', height: 130 }}>
-                  <ResponsiveContainer width="100%" height="100%">
-                    <RechartsBarChart
-                      data={data.growth?.weeklyTrend || []}
-                      margin={{ top: 4, right: 0, left: -22, bottom: -4 }}
-                      barGap={3}
-                    >
-                      <CartesianGrid strokeDasharray="2 2" stroke="#ede5d6" vertical={false} />
-                      <XAxis dataKey="day" tick={{ fontSize: 10, fill: '#736b5e' }} axisLine={false} tickLine={false} />
-                      <YAxis tick={{ fontSize: 10, fill: '#736b5e' }} axisLine={false} tickLine={false} domain={[0, 900]} ticks={[0, 300, 600, 900]} />
-                      <Bar dataKey="leads" fill="#9e1820" radius={[3, 3, 0, 0]} isAnimationActive={false} barSize={11} />
-                      <Bar dataKey="customers" fill="#fca5a5" radius={[3, 3, 0, 0]} isAnimationActive={false} barSize={11} />
-                    </RechartsBarChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-            </div>
-
-            {/* Card 3.3: Quadrant Metric Card (Milestones, Blockers, Mentor, Founder Score) */}
-            <div style={cardStyle}>
-              <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: 12, alignItems: 'center' }}>
-                {/* Top-Left: Key Milestones */}
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <Flag style={{ width: 14, height: 14, color: '#9e1820' }} />
-                    <span style={{ fontSize: 11.5, fontWeight: 800, color: '#1e1b18' }}>Key Milestones</span>
-                  </div>
-                  <div style={{ fontSize: 26, fontWeight: 900, color: '#1e1b18', marginTop: 3 }}>
-                    {data.execution?.milestonesCount || '7/10'}
-                  </div>
-                  <div style={{ width: '85%', height: 6, borderRadius: 100, background: '#fae8e8', overflow: 'hidden', marginTop: 4 }}>
-                    <div style={{ width: '70%', height: '100%', background: '#9e1820' }} />
-                  </div>
-                </div>
-
-                {/* Top-Right: Critical Blockers */}
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <AlertTriangle style={{ width: 14, height: 14, color: '#9e1820' }} />
-                    <span style={{ fontSize: 11.5, fontWeight: 800, color: '#1e1b18' }}>Critical Blockers</span>
-                  </div>
-                  <div style={{ fontSize: 32, fontWeight: 900, color: '#9e1820', marginTop: 3 }}>
-                    {data.execution?.criticalBlockersCount || 2}
-                  </div>
-                </div>
-
-                {/* Bottom-Left: Mentor Rating */}
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <Star style={{ width: 14, height: 14, color: '#9e1820' }} />
-                    <span style={{ fontSize: 11.5, fontWeight: 800, color: '#1e1b18' }}>Mentor Rating</span>
-                  </div>
-                  <div style={{ fontSize: 26, fontWeight: 900, color: '#1e1b18', marginTop: 3 }}>
-                    {data.execution?.mentorRating || '8/10'}
-                  </div>
-                </div>
-
-                {/* Bottom-Right: Founder Execution Score */}
-                <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <Zap style={{ width: 14, height: 14, color: '#9e1820' }} />
-                    <span style={{ fontSize: 11.5, fontWeight: 800, color: '#1e1b18' }}>Founder Execution Score</span>
-                  </div>
-                  <div style={{ fontSize: 26, fontWeight: 900, color: '#1e1b18', marginTop: 3 }}>
-                    {data.execution?.founderExecutionScore || 82}%
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* ══════════════════════════════════════════════════════════
-              ROW 4 (Height: ~28%): 3 Cards
-              Top Wins | Critical Blockers | Startup Value Spotlight
-             ══════════════════════════════════════════════════════════ */}
-          <div
-            style={{
-              height: '28%',
-              minHeight: 0,
-              display: 'grid',
-              gridTemplateColumns: '1.05fr 1.15fr 1.25fr',
-              gap: 10,
-            }}
-          >
-            {/* Card 4.1: Top Wins This Week */}
-            <div style={{ ...cardStyle, position: 'relative' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, zIndex: 1 }}>
-                <Trophy style={{ width: 16, height: 16, color: '#9e1820' }} />
-                <span style={{ fontSize: 13, fontWeight: 800, color: '#1e1b18' }}>Top Wins This Week</span>
-              </div>
-
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 10, zIndex: 1, margin: '4px 0' }}>
-                {(data.highlights?.topWins || [
-                  'Revenue crossed ₹7.2L',
-                  '4/5 priorities completed',
-                  'Lead generation reached 840',
-                ]).slice(0, 3).map((win, idx) => (
-                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13.5, fontWeight: 600, color: '#1e1b18' }}>
                     <span
                       style={{
-                        width: 24,
-                        height: 24,
-                        borderRadius: '50%',
-                        background: '#9e1820',
-                        color: '#ffffff',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: 12,
-                        fontWeight: 900,
+                        padding: '2px 6px',
+                        borderRadius: 5,
+                        fontSize: 9,
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                        background:
+                          task.status === 'DONE'
+                            ? '#ecfdf5'
+                            : task.status === 'IN_PROGRESS'
+                            ? '#f0f9ff'
+                            : '#f4efd5',
+                        color:
+                          task.status === 'DONE'
+                            ? '#065f46'
+                            : task.status === 'IN_PROGRESS'
+                            ? '#0369a1'
+                            : colors.textSecondary,
                         flexShrink: 0,
                       }}
                     >
-                      {idx + 1}
+                      {task.status}
                     </span>
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{win}</span>
                   </div>
                 ))}
               </div>
+            )}
+          </div>
 
-              {/* Elegant Calligraphy Handwriting Watermark */}
-              <div
-                style={{
-                  position: 'absolute',
-                  right: 14,
-                  bottom: 6,
-                  color: '#9e1820',
-                  fontFamily: "'Caveat', cursive, sans-serif",
-                  fontSize: 44,
-                  fontWeight: 700,
-                  transform: 'rotate(-6deg)',
-                  opacity: 0.38,
-                  pointerEvents: 'none',
-                }}
-              >
-                Small Steps Brighter Days
+          {/* Delivery Quality Mix */}
+          <div
+            style={{
+              background: colors.cardBg,
+              border: `1px solid ${colors.cardBorder}`,
+              borderRadius: 14,
+              padding: '12px 18px',
+              display: 'flex',
+              flexDirection: 'column',
+              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+              minHeight: 0,
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Target className="w-4 h-4 text-sky-500" />
+                <h3 style={{ fontSize: 12.5, fontWeight: 800 }}>Delivery Quality Mix</h3>
               </div>
+              <span style={{ fontSize: 10, color: colors.textMuted }}>Accuracy & Pacing</span>
             </div>
 
-            {/* Card 4.2: Critical Blockers */}
-            <div style={{ ...cardStyle, position: 'relative' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6, zIndex: 1 }}>
-                <AlertCircle style={{ width: 16, height: 16, color: '#9e1820' }} />
-                <span style={{ fontSize: 13, fontWeight: 800, color: '#1e1b18' }}>Critical Blockers</span>
-              </div>
-
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 12, zIndex: 1, margin: '6px 0' }}>
-                {(data.highlights?.criticalBlockers || [
-                  'Packaging vendor delay',
-                  'Performance ad creative refresh needed',
-                ]).slice(0, 2).map((blocker, idx) => (
-                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13.5, fontWeight: 600, color: '#1e1b18' }}>
-                    <span
-                      style={{
-                        width: 24,
-                        height: 24,
-                        borderRadius: '50%',
-                        background: '#9e1820',
-                        color: '#ffffff',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: 12,
-                        fontWeight: 900,
-                        flexShrink: 0,
-                      }}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minHeight: 0 }}>
+              {/* Pie Chart */}
+              <div style={{ width: 90, height: 90, flexShrink: 0 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      isAnimationActive={false}
+                      data={charts.quality}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={24}
+                      outerRadius={40}
+                      paddingAngle={3}
+                      dataKey="value"
                     >
-                      {idx + 1}
-                    </span>
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{blocker}</span>
-                  </div>
-                ))}
+                      {charts.quality.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                  </PieChart>
+                </ResponsiveContainer>
               </div>
 
-              {/* Elegant Calligraphy Handwriting Watermark */}
-              <div
-                style={{
-                  position: 'absolute',
-                  right: 16,
-                  bottom: 6,
-                  color: '#9e1820',
-                  fontFamily: "'Caveat', cursive, sans-serif",
-                  fontSize: 44,
-                  fontWeight: 700,
-                  transform: 'rotate(-6deg)',
-                  opacity: 0.38,
-                  pointerEvents: 'none',
-                }}
-              >
-                Solve Scale Shine
-              </div>
-            </div>
-
-            {/* Card 4.3: STARTUP VALUE SPOTLIGHT */}
-            <div style={{ ...cardStyle, padding: '14px 18px', justifyContent: 'space-between' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Gem style={{ width: 16, height: 16, color: '#9e1820' }} />
-                <span
-                  style={{
-                    fontSize: 11.5,
-                    fontWeight: 900,
-                    color: '#9e1820',
-                    letterSpacing: '0.8px',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  STARTUP VALUE SPOTLIGHT
-                </span>
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, margin: '4px 0' }}>
-                {(data.highlights?.valueSpotlight?.items || [
-                  'Science-led skincare',
-                  'Barrier-first routines',
-                  'High repeat-purchase potential',
-                ]).map((item, idx) => (
-                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: '#1e1b18' }}>
-                    <div
-                      style={{
-                        width: 18,
-                        height: 18,
-                        borderRadius: '50%',
-                        background: '#9e1820',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        flexShrink: 0,
-                      }}
-                    >
-                      <Check style={{ width: 11, height: 11, color: '#ffffff', strokeWidth: 3 }} />
+              {/* Quality Legend */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                {charts.quality.map((item) => (
+                  <div key={item.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 11 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: item.color }} />
+                      <span style={{ color: colors.textSecondary }}>{item.name}</span>
                     </div>
-                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item}</span>
+                    <span style={{ fontWeight: 700, color: colors.textPrimary }}>{item.value} tasks</span>
                   </div>
                 ))}
-              </div>
-
-              {/* Bottom Solid Crimson Pill Banner */}
-              <div
-                style={{
-                  background: '#9e1820',
-                  borderRadius: 100,
-                  padding: '8px 18px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  color: '#ffffff',
-                }}
-              >
-                <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: '0.3px' }}>
-                  {data.highlights?.valueSpotlight?.bannerText || 'Brand built for repeat trust.'}
-                </span>
-                <div
-                  style={{
-                    width: 22,
-                    height: 22,
-                    borderRadius: '50%',
-                    background: '#ffffff',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <ArrowRight style={{ width: 12, height: 12, color: '#9e1820', strokeWidth: 3 }} />
-                </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* ══════════════════════════════════════════════════════════
-            RIGHT COLUMN: FOUNDER OF THE WEEK HERO PLAQUE (Full Height)
-           ══════════════════════════════════════════════════════════ */}
+        {/* ── 7. Bottom News & Milestones Ticker ── */}
         <div
           style={{
-            height: '100%',
-            background: 'linear-gradient(180deg, #6c0d12 0%, #9e1820 40%, #4a070a 100%)',
-            borderRadius: 16,
-            border: '1px solid rgba(255, 230, 200, 0.25)',
-            boxShadow: '0 12px 36px rgba(108, 13, 18, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
-            padding: '24px 18px 20px 18px',
+            background: '#ede7d3',
+            borderRadius: 9,
+            padding: '6px 16px',
             display: 'flex',
-            flexDirection: 'column',
             alignItems: 'center',
-            justifyContent: 'space-between',
-            textAlign: 'center',
-            color: '#ffffff',
-            position: 'relative',
+            gap: 12,
+            fontSize: 11,
+            color: colors.textSecondary,
+            flexShrink: 0,
             overflow: 'hidden',
           }}
         >
-          {/* Subtle Golden Ambient Glow Behind Laurel */}
           <div
             style={{
-              position: 'absolute',
-              top: '25%',
-              width: 240,
-              height: 240,
-              borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(246, 213, 133, 0.35) 0%, rgba(246, 213, 133, 0.08) 55%, transparent 70%)',
-              pointerEvents: 'none',
-            }}
-          />
-
-          {/* Top Title */}
-          <div>
-            <div
-              style={{
-                fontSize: 17,
-                fontWeight: 900,
-                letterSpacing: '2.5px',
-                color: '#ffffff',
-                textTransform: 'uppercase',
-              }}
-            >
-              FOUNDER OF THE WEEK
-            </div>
-          </div>
-
-          {/* Golden Laurel Wreath + Circular Silhouette Portrait */}
-          <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <div style={{ position: 'relative', width: 200, height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              {/* Detailed Golden Laurel Wreath SVG */}
-              <svg width="200" height="200" viewBox="0 0 140 140" fill="none" style={{ position: 'absolute', inset: 0 }}>
-                {/* Left Laurel Branch */}
-                <path d="M42 110 C25 90 22 55 46 28" stroke="#f6d585" strokeWidth="2.5" strokeLinecap="round" />
-                <path d="M42 100 C30 92 34 82 40 86" fill="#f6d585" />
-                <path d="M35 84 C24 76 28 66 34 70" fill="#f6d585" />
-                <path d="M30 68 C20 60 25 50 31 54" fill="#f6d585" />
-                <path d="M30 52 C22 44 28 34 35 38" fill="#f6d585" />
-                <path d="M36 38 C30 30 38 20 45 25" fill="#f6d585" />
-
-                {/* Right Laurel Branch */}
-                <path d="M98 110 C115 90 118 55 94 28" stroke="#f6d585" strokeWidth="2.5" strokeLinecap="round" />
-                <path d="M98 100 C110 92 106 82 100 86" fill="#f6d585" />
-                <path d="M105 84 C116 76 112 66 106 70" fill="#f6d585" />
-                <path d="M110 68 C120 60 115 50 109 54" fill="#f6d585" />
-                <path d="M110 52 C118 44 112 34 105 38" fill="#f6d585" />
-                <path d="M104 38 C110 30 102 20 95 25" fill="#f6d585" />
-              </svg>
-
-              {/* Founder Circular Silhouette Portrait Frame */}
-              <div
-                style={{
-                  width: 120,
-                  height: 120,
-                  borderRadius: '50%',
-                  background: 'radial-gradient(circle, #3d070b 0%, #150203 100%)',
-                  border: '3px solid #f6d585',
-                  boxShadow: '0 0 24px rgba(246, 213, 133, 0.45)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  overflow: 'hidden',
-                }}
-              >
-                {/* Stylized Founder Silhouette */}
-                <svg width="80" height="92" viewBox="0 0 58 68" fill="none">
-                  <circle cx="29" cy="22" r="14" fill="#fce7b2" fillOpacity="0.85" />
-                  <path
-                    d="M8 68 C8 46 16 40 29 40 C42 40 50 46 50 68 Z"
-                    fill="#fce7b2"
-                    fillOpacity="0.85"
-                  />
-                </svg>
-              </div>
-            </div>
-
-            {/* 3D Folded Metallic Golden Ribbon */}
-            <div
-              style={{
-                marginTop: -22,
-                position: 'relative',
-                zIndex: 5,
-                background: 'linear-gradient(180deg, #ffeaa7 0%, #f6c85f 40%, #df9a26 100%)',
-                color: '#730e13',
-                padding: '7px 20px',
-                borderRadius: 5,
-                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.4)',
-                border: '1px solid #fff5cc',
-                fontSize: 13,
-                fontWeight: 900,
-                letterSpacing: '1.2px',
-                textTransform: 'uppercase',
-                textShadow: '0 1px 0 rgba(255, 255, 255, 0.6)',
-              }}
-            >
-              {data.founderOfTheWeek?.award || 'CHAMPIONING PROGRESS'}
-            </div>
-          </div>
-
-          {/* Citation Text */}
-          <div
-            style={{
-              fontSize: 15,
-              color: '#ffe6cf',
-              fontStyle: 'italic',
-              fontFamily: 'var(--font-serif)',
-              lineHeight: 1.5,
-              padding: '0 14px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              color: colors.brandRed,
+              fontWeight: 800,
+              fontSize: 10,
+              letterSpacing: '0.6px',
+              textTransform: 'uppercase',
+              flexShrink: 0,
             }}
           >
-            &ldquo;{data.founderOfTheWeek?.citation || 'Recognised for strongest weekly execution and milestone progress.'}&rdquo;
+            <Flame className="w-3.5 h-3.5" />
+            <span>STUDIO DISPATCH</span>
           </div>
 
-          {/* Golden Hairline Divider with Diamond */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: '70%' }}>
-            <div style={{ flex: 1, height: 1, background: 'rgba(246, 213, 133, 0.4)' }} />
-            <span style={{ color: '#f6d585', fontSize: 12 }}>✦</span>
-            <div style={{ flex: 1, height: 1, background: 'rgba(246, 213, 133, 0.4)' }} />
+          <div style={{ height: 14, width: 1, background: colors.cardBorder, flexShrink: 0 }} />
+
+          <div style={{ overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', flex: 1 }}>
+            {recentActivity.length > 0 ? (
+              <span>
+                Recent: {recentActivity[0].action.replace(/_/g, ' ')} • Recorded on Day One Platform
+              </span>
+            ) : (
+              <span>
+                Live sprint cadence monitoring active for {startup.name} • All domain operations connected
+              </span>
+            )}
           </div>
 
-          {/* Bottom Motto */}
-          <div>
-            <div
-              style={{
-                fontSize: 13,
-                fontWeight: 900,
-                letterSpacing: '2.2px',
-                color: '#f6d585',
-                textTransform: 'uppercase',
-                lineHeight: 1.4,
-              }}
-            >
-              BOLDER FOUNDERS
-            </div>
-            <div
-              style={{
-                fontSize: 13,
-                fontWeight: 900,
-                letterSpacing: '2.2px',
-                color: '#f6d585',
-                textTransform: 'uppercase',
-                lineHeight: 1.4,
-              }}
-            >
-              BRIGHTER TOMORROW
-            </div>
+          <div style={{ fontSize: 10, color: colors.textMuted, flexShrink: 0 }}>
+            {isAutoCycle
+              ? `Auto-Cycle Active (${Math.round((autoCycleProgress / 100) * autoCycleSeconds)}s / ${autoCycleSeconds}s)`
+              : 'Sync interval: 20s'}
           </div>
         </div>
       </main>
 
-      {/* ── FOOTER (FULL WIDTH, CLEAN TYPOGRAPHY) ── */}
-      <footer
-        style={{
-          height: 28,
-          flexShrink: 0,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          fontSize: 10.5,
-          fontWeight: 800,
-          letterSpacing: '1px',
-          color: '#736b5e',
-          textTransform: 'uppercase',
-          padding: '0 6px',
-          borderTop: '1px solid rgba(158, 24, 32, 0.12)',
-          zIndex: 10,
-        }}
-      >
-        <div>
-          <span style={{ color: '#9e1820', fontWeight: 900 }}>DAYONE</span>
-          <span style={{ margin: '0 8px', opacity: 0.5 }}>|</span>
-          <span>SEVEN STARTUPS</span>
-          <span style={{ margin: '0 8px', opacity: 0.5 }}>|</span>
-          <span>ONE OPERATING SYSTEM</span>
-        </div>
+      {/* ── Fleet Modal (When user wants all screen URLs) ── */}
+      {isFleetModalOpen && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0, 0, 0, 0.75)',
+            backdropFilter: 'blur(8px)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 150,
+            padding: 20,
+          }}
+          onClick={() => setIsFleetModalOpen(false)}
+        >
+          <div
+            style={{
+              background: colors.cardBg,
+              border: `1px solid ${colors.cardBorder}`,
+              borderRadius: 16,
+              padding: 24,
+              maxWidth: 580,
+              width: '100%',
+              boxShadow: '0 20px 50px rgba(0, 0, 0, 0.5)',
+            }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+              <div>
+                <h3 style={{ fontSize: 18, fontWeight: 800 }}>Portfolio Multi-TV Fleet</h3>
+                <p style={{ fontSize: 12, color: colors.textMuted, marginTop: 2 }}>
+                  Direct permanent URLs designed for 1080p / 4K Wall Displays
+                </p>
+              </div>
+              <button
+                onClick={() => setIsFleetModalOpen(false)}
+                style={{
+                  background: colors.subtleCard,
+                  border: `1px solid ${colors.cardBorder}`,
+                  borderRadius: 8,
+                  padding: '5px 10px',
+                  color: colors.textSecondary,
+                  cursor: 'pointer',
+                  fontSize: 12,
+                }}
+              >
+                Close (Esc)
+              </button>
+            </div>
 
-        {/* Center Star with Hairline Rules */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '24%' }}>
-          <div style={{ flex: 1, height: 1, background: '#ded6c1' }} />
-          <span style={{ color: '#9e1820', fontSize: 13 }}>✦</span>
-          <div style={{ flex: 1, height: 1, background: '#ded6c1' }} />
-        </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 340, overflowY: 'auto' }}>
+              {allStartups.map((s) => (
+                <div
+                  key={s.id}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '10px 14px',
+                    borderRadius: 10,
+                    background: colors.subtleCard,
+                    border: `1px solid ${colors.cardBorder}`,
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                    <CompanyLogo
+                      logoUrl={s.logo_url}
+                      name={s.name}
+                      size={28}
+                    />
+                    <div>
+                      <div style={{ fontSize: 13, fontWeight: 700 }}>{s.name}</div>
+                      <div style={{ fontSize: 10.5, color: colors.textMuted }}>/tv/{s.slug}</div>
+                    </div>
+                  </div>
 
-        <div>
-          <span>PEOPLE</span>
-          <span style={{ margin: '0 8px', opacity: 0.5 }}>×</span>
-          <span>BRANDS</span>
-          <span style={{ margin: '0 8px', opacity: 0.5 }}>×</span>
-          <span>BIGGER POSSIBILITIES</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <button
+                      onClick={() => {
+                        handleSelectStartup(s)
+                        setIsFleetModalOpen(false)
+                      }}
+                      style={{
+                        padding: '5px 10px',
+                        borderRadius: 6,
+                        background: colors.brandRed,
+                        color: '#ffffff',
+                        border: 'none',
+                        fontSize: 11,
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      Switch Here
+                    </button>
+                    <button
+                      onClick={() => {
+                        const origin = typeof window !== 'undefined' ? window.location.origin : ''
+                        navigator.clipboard.writeText(`${origin}/tv/${s.slug}`)
+                        alert(`Copied: ${origin}/tv/${s.slug}`)
+                      }}
+                      title="Copy URL"
+                      style={{
+                        padding: '5px 8px',
+                        borderRadius: 6,
+                        background: colors.cardBg,
+                        border: `1px solid ${colors.cardBorder}`,
+                        color: colors.textSecondary,
+                        cursor: 'pointer',
+                      }}
+                    >
+                      <Copy className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
-      </footer>
+      )}
     </div>
   )
 }
