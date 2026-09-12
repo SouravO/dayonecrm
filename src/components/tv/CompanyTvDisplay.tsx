@@ -217,7 +217,7 @@ export function CompanyTvDisplay({
     }
   }
 
-  // Keyboard Shortcuts (Arrow keys to navigate, 'F' for fullscreen, Space for cycle)
+  // Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
@@ -246,16 +246,15 @@ export function CompanyTvDisplay({
     (s.sector && s.sector.toLowerCase().includes(companySearch.toLowerCase()))
   )
 
-  // Card base styles matching the reference design
+  // Card base styles with true TV vertical density
   const cardStyle: React.CSSProperties = {
     background: '#ffffff',
     borderRadius: 14,
-    border: '1px solid rgba(224, 215, 200, 0.7)',
+    border: '1px solid rgba(220, 210, 195, 0.75)',
     boxShadow: '0 4px 16px -2px rgba(160, 130, 110, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.03)',
-    padding: '10px 14px',
+    padding: '14px 18px',
     display: 'flex',
     flexDirection: 'column',
-    justifyContent: 'space-between',
     minHeight: 0,
     position: 'relative',
     overflow: 'hidden',
@@ -268,19 +267,19 @@ export function CompanyTvDisplay({
         height: '100vh',
         maxHeight: '100vh',
         overflow: 'hidden',
-        background: 'radial-gradient(ellipse at 50% 30%, #fffdf9 0%, #f9f2e7 60%, #efe4d3 100%)',
+        background: 'radial-gradient(ellipse at 50% 30%, #fffdfa 0%, #f7f0e3 60%, #eee2cf 100%)',
         color: '#1e1b18',
         fontFamily: "'Plus Jakarta Sans', var(--font-sans), sans-serif",
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-        padding: '12px 18px 8px 18px',
+        padding: '12px 20px 8px 20px',
         boxSizing: 'border-box',
         position: 'relative',
         userSelect: 'none',
       }}
     >
-      {/* ── AMBIENT 3D LIQUID ACCENTS (MATCHING REFERENCE LUXURY AESTHETIC) ── */}
+      {/* ── AMBIENT 3D LIQUID ACCENTS (EXACT MATCH TO REFERENCE DESIGN) ── */}
       {/* Top Left Subtle Liquid Curve */}
       <svg
         width="260"
@@ -293,7 +292,7 @@ export function CompanyTvDisplay({
           left: -20,
           pointerEvents: 'none',
           zIndex: 0,
-          opacity: 0.45,
+          opacity: 0.5,
         }}
       >
         <path
@@ -302,7 +301,7 @@ export function CompanyTvDisplay({
         />
         <defs>
           <linearGradient id="ambientRedGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#ca2f2b" stopOpacity="0.4" />
+            <stop offset="0%" stopColor="#ca2f2b" stopOpacity="0.45" />
             <stop offset="100%" stopColor="#fca5a5" stopOpacity="0" />
           </linearGradient>
         </defs>
@@ -320,15 +319,13 @@ export function CompanyTvDisplay({
           right: -20,
           pointerEvents: 'none',
           zIndex: 0,
-          opacity: 0.55,
+          opacity: 0.6,
         }}
       >
-        {/* Curving liquid ribbon */}
         <path
           d="M40 220 C90 140 180 130 280 170 C240 220 160 230 40 220 Z"
           fill="url(#ambientRedGrad2)"
         />
-        {/* Glowing glass orb sphere */}
         <circle cx="210" cy="150" r="42" fill="url(#orbGrad)" />
         <circle cx="195" cy="135" r="14" fill="#ffffff" fillOpacity="0.55" />
         <defs>
@@ -347,7 +344,7 @@ export function CompanyTvDisplay({
       {/* ── HEADER ── */}
       <header
         style={{
-          height: 52,
+          height: 56,
           flexShrink: 0,
           display: 'flex',
           alignItems: 'center',
@@ -358,7 +355,6 @@ export function CompanyTvDisplay({
       >
         {/* Left: Brand Identity & Subtitles */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          {/* Day One Logo */}
           <Link
             href="/"
             style={{
@@ -371,10 +367,10 @@ export function CompanyTvDisplay({
             <div style={{ display: 'flex', alignItems: 'baseline' }}>
               <span
                 style={{
-                  fontSize: 34,
+                  fontSize: 38,
                   fontWeight: 900,
                   color: '#9e1820',
-                  letterSpacing: '-1.2px',
+                  letterSpacing: '-1.4px',
                   fontFamily: "'Plus Jakarta Sans', var(--font-sans), sans-serif",
                 }}
               >
@@ -383,7 +379,7 @@ export function CompanyTvDisplay({
             </div>
             <span
               style={{
-                fontSize: 10.5,
+                fontSize: 11.5,
                 fontWeight: 600,
                 color: '#9e1820',
                 fontFamily: 'var(--font-serif)',
@@ -396,14 +392,12 @@ export function CompanyTvDisplay({
             </span>
           </Link>
 
-          {/* Vertical Divider Line */}
-          <div style={{ width: 1, height: 38, background: '#ded6c1' }} />
+          <div style={{ width: 1, height: 42, background: '#dcd2bd' }} />
 
-          {/* Dashboard Headings */}
           <div>
             <div
               style={{
-                fontSize: 12,
+                fontSize: 13,
                 fontWeight: 900,
                 color: '#9e1820',
                 letterSpacing: '1.8px',
@@ -414,7 +408,7 @@ export function CompanyTvDisplay({
             </div>
             <div
               style={{
-                fontSize: 12.5,
+                fontSize: 13.5,
                 fontWeight: 800,
                 color: '#26221f',
                 letterSpacing: '0.8px',
@@ -426,7 +420,7 @@ export function CompanyTvDisplay({
             </div>
             <div
               style={{
-                fontSize: 9.5,
+                fontSize: 10.5,
                 color: '#736b5e',
                 fontWeight: 500,
               }}
@@ -438,11 +432,10 @@ export function CompanyTvDisplay({
 
         {/* Right: Startup Screen Dots & Spotlight Card */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          {/* Startup Screen Indicator & Dot Progress */}
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3 }}>
             <div
               style={{
-                fontSize: 9.5,
+                fontSize: 10,
                 fontWeight: 800,
                 color: '#4a443a',
                 letterSpacing: '0.9px',
@@ -463,10 +456,10 @@ export function CompanyTvDisplay({
                     onClick={() => targetStartup && handleSelectStartup(targetStartup)}
                     disabled={!targetStartup}
                     style={{
-                      width: isSelected ? 18 : 6.5,
-                      height: 6.5,
+                      width: isSelected ? 22 : 7.5,
+                      height: 7.5,
                       borderRadius: 100,
-                      background: isSelected ? '#9e1820' : '#ded6c1',
+                      background: isSelected ? '#9e1820' : '#dcd2bd',
                       border: 'none',
                       cursor: targetStartup ? 'pointer' : 'default',
                       transition: 'all 0.2s ease',
@@ -480,7 +473,7 @@ export function CompanyTvDisplay({
 
             <div
               style={{
-                fontSize: 8.5,
+                fontSize: 9,
                 fontWeight: 700,
                 color: '#8c8270',
                 letterSpacing: '0.6px',
@@ -491,19 +484,19 @@ export function CompanyTvDisplay({
             </div>
           </div>
 
-          <div style={{ width: 1, height: 32, background: '#ded6c1' }} />
+          <div style={{ width: 1, height: 36, background: '#dcd2bd' }} />
 
           {/* Quick Swap Arrows & Spotlight Card */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 5, position: 'relative' }} ref={dropdownRef}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, position: 'relative' }} ref={dropdownRef}>
             <button
               onClick={handlePrevStartup}
               title="Previous Startup (←)"
               style={{
-                width: 28,
-                height: 28,
+                width: 32,
+                height: 32,
                 borderRadius: 8,
                 background: '#ffffff',
-                border: '1px solid #ded6c1',
+                border: '1px solid #dcd2bd',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -512,7 +505,7 @@ export function CompanyTvDisplay({
                 boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
               }}
             >
-              <ChevronLeft className="w-3.5 h-3.5" />
+              <ChevronLeft className="w-4 h-4" />
             </button>
 
             {/* Spotlight Card */}
@@ -520,9 +513,9 @@ export function CompanyTvDisplay({
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               style={{
                 background: '#ffffff',
-                border: '1px solid #ded6c1',
+                border: '1px solid #dcd2bd',
                 borderRadius: 12,
-                padding: '4px 12px 4px 10px',
+                padding: '5px 14px 5px 12px',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 10,
@@ -531,11 +524,11 @@ export function CompanyTvDisplay({
                 transition: 'all 0.15s ease',
               }}
             >
-              <CompanyLogo logoUrl={data.startup.logo_url} name={data.startup.name} size={30} />
+              <CompanyLogo logoUrl={data.startup.logo_url} name={data.startup.name} size={34} />
               <div>
                 <div
                   style={{
-                    fontSize: 8,
+                    fontSize: 8.5,
                     fontWeight: 900,
                     color: '#9e1820',
                     letterSpacing: '0.8px',
@@ -544,25 +537,25 @@ export function CompanyTvDisplay({
                 >
                   STARTUP SPOTLIGHT
                 </div>
-                <div style={{ fontSize: 13, fontWeight: 900, color: '#9e1820', lineHeight: 1.1 }}>
+                <div style={{ fontSize: 14.5, fontWeight: 900, color: '#9e1820', lineHeight: 1.1 }}>
                   {data.startup.name}
                 </div>
-                <div style={{ fontSize: 9, color: '#736b5e', fontWeight: 600 }}>
+                <div style={{ fontSize: 10, color: '#736b5e', fontWeight: 600 }}>
                   {data.sector || 'Skincare / Beauty Tech'}
                 </div>
               </div>
-              <ChevronDown className="w-3 h-3 text-stone-400" />
+              <ChevronDown className="w-3.5 h-3.5 text-stone-400" />
             </div>
 
             <button
               onClick={handleNextStartup}
               title="Next Startup (→)"
               style={{
-                width: 28,
-                height: 28,
+                width: 32,
+                height: 32,
                 borderRadius: 8,
                 background: '#ffffff',
-                border: '1px solid #ded6c1',
+                border: '1px solid #dcd2bd',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -571,7 +564,7 @@ export function CompanyTvDisplay({
                 boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
               }}
             >
-              <ChevronRight className="w-3.5 h-3.5" />
+              <ChevronRight className="w-4 h-4" />
             </button>
 
             {/* Fullscreen Toggle */}
@@ -579,11 +572,11 @@ export function CompanyTvDisplay({
               onClick={toggleFullscreen}
               title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen (F)'}
               style={{
-                width: 28,
-                height: 28,
+                width: 32,
+                height: 32,
                 borderRadius: 8,
                 background: '#ffffff',
-                border: '1px solid #ded6c1',
+                border: '1px solid #dcd2bd',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -593,7 +586,7 @@ export function CompanyTvDisplay({
                 marginLeft: 2,
               }}
             >
-              {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+              {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
             </button>
 
             {/* Startup Swapper Dropdown */}
@@ -604,9 +597,9 @@ export function CompanyTvDisplay({
                   top: '100%',
                   right: 0,
                   marginTop: 6,
-                  width: 260,
+                  width: 270,
                   background: '#ffffff',
-                  border: '1px solid #ded6c1',
+                  border: '1px solid #dcd2bd',
                   borderRadius: 12,
                   boxShadow: '0 12px 32px rgba(0,0,0,0.12)',
                   padding: 10,
@@ -614,10 +607,10 @@ export function CompanyTvDisplay({
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, padding: '0 4px' }}>
-                  <span style={{ fontSize: 10, fontWeight: 900, color: '#8c8270', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                  <span style={{ fontSize: 10.5, fontWeight: 900, color: '#8c8270', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
                     Select Portfolio Startup
                   </span>
-                  <span style={{ fontSize: 9.5, color: '#9e1820', fontWeight: 800 }}>
+                  <span style={{ fontSize: 10, color: '#9e1820', fontWeight: 800 }}>
                     {allStartups.length} Available
                   </span>
                 </div>
@@ -627,14 +620,14 @@ export function CompanyTvDisplay({
                     display: 'flex',
                     alignItems: 'center',
                     gap: 6,
-                    padding: '5px 8px',
-                    borderRadius: 7,
+                    padding: '6px 9px',
+                    borderRadius: 8,
                     background: '#fcfbf7',
-                    border: '1px solid #ded6c1',
+                    border: '1px solid #dcd2bd',
                     marginBottom: 6,
                   }}
                 >
-                  <Search className="w-3 h-3 text-stone-400" />
+                  <Search className="w-3.5 h-3.5 text-stone-400" />
                   <input
                     type="text"
                     placeholder="Search startups..."
@@ -644,7 +637,7 @@ export function CompanyTvDisplay({
                       border: 'none',
                       background: 'transparent',
                       outline: 'none',
-                      fontSize: 10.5,
+                      fontSize: 11,
                       color: '#1e1b18',
                       width: '100%',
                     }}
@@ -652,7 +645,7 @@ export function CompanyTvDisplay({
                   />
                 </div>
 
-                <div style={{ maxHeight: 230, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 3 }}>
+                <div style={{ maxHeight: 240, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 3 }}>
                   {filteredStartups.map((s, idx) => {
                     const isSelected = s.id === currentStartupId || s.name.toLowerCase() === data.startup.name.toLowerCase()
                     return (
@@ -663,8 +656,8 @@ export function CompanyTvDisplay({
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
-                          padding: '6px 8px',
-                          borderRadius: 7,
+                          padding: '7px 9px',
+                          borderRadius: 8,
                           background: isSelected ? 'rgba(158, 24, 32, 0.08)' : 'transparent',
                           border: isSelected ? '1px solid #9e1820' : '1px solid transparent',
                           cursor: 'pointer',
@@ -674,17 +667,17 @@ export function CompanyTvDisplay({
                         }}
                       >
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-                          <CompanyLogo logoUrl={s.logo_url} name={s.name} size={22} />
+                          <CompanyLogo logoUrl={s.logo_url} name={s.name} size={24} />
                           <div style={{ minWidth: 0 }}>
-                            <div style={{ fontSize: 11.5, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            <div style={{ fontSize: 12, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                               {s.name}
                             </div>
-                            <div style={{ fontSize: 9, color: '#736b5e' }}>
+                            <div style={{ fontSize: 9.5, color: '#736b5e' }}>
                               {s.sector || 'Portfolio Startup'}
                             </div>
                           </div>
                         </div>
-                        <span style={{ fontSize: 9, color: '#8c8270', fontWeight: 700 }}>
+                        <span style={{ fontSize: 9.5, color: '#8c8270', fontWeight: 700 }}>
                           0{idx + 1}
                         </span>
                       </button>
@@ -697,14 +690,14 @@ export function CompanyTvDisplay({
         </div>
       </header>
 
-      {/* ── MAIN 4-ROW + HERO GRID (EXACT 100% FIDELITY TO REFERENCE MOCKUP) ── */}
+      {/* ── MAIN 4-ROW + HERO GRID ── */}
       <main
         style={{
           flex: 1,
           minHeight: 0,
           display: 'grid',
-          gridTemplateColumns: '1fr 275px',
-          gap: 10,
+          gridTemplateColumns: '1fr 300px',
+          gap: 12,
           margin: '8px 0',
           opacity: isSwitching ? 0.35 : 1,
           transition: 'opacity 0.15s ease',
@@ -712,12 +705,12 @@ export function CompanyTvDisplay({
           zIndex: 1,
         }}
       >
-        {/* ── LEFT COLUMN: 4 HORIZONTAL ROWS ── */}
+        {/* ── LEFT COLUMN: 4 EQUALLY BALANCED HORIZONTAL ROWS ── */}
         <div
           style={{
             display: 'flex',
             flexDirection: 'column',
-            gap: 9,
+            gap: 10,
             height: '100%',
             minHeight: 0,
           }}
@@ -732,49 +725,52 @@ export function CompanyTvDisplay({
               minHeight: 0,
               display: 'grid',
               gridTemplateColumns: '1.15fr 1.6fr 1.05fr 1.1fr',
-              gap: 9,
+              gap: 10,
             }}
           >
             {/* Card 1.1: Current Stage */}
             <div style={cardStyle}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Layers style={{ width: 14, height: 14, color: '#9e1820' }} />
-                <span style={{ fontSize: 11, fontWeight: 800, color: '#1e1b18' }}>Current Stage</span>
+                <Layers style={{ width: 16, height: 16, color: '#9e1820' }} />
+                <span style={{ fontSize: 12.5, fontWeight: 800, color: '#1e1b18' }}>Current Stage</span>
               </div>
 
-              {/* Segmented Pill Selector: MVP | GTM | Growth */}
-              <div
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  background: '#f8f5ed',
-                  borderRadius: 100,
-                  padding: '3px 4px',
-                  border: '1px solid #e8e2d4',
-                  justifyContent: 'space-between',
-                }}
-              >
-                {(['MVP', 'GTM', 'Growth'] as const).map((stg) => {
-                  const isActive = (data.stage || 'Growth') === stg
-                  return (
-                    <div
-                      key={stg}
-                      style={{
-                        padding: '4px 14px',
-                        borderRadius: 100,
-                        fontSize: 10,
-                        fontWeight: 800,
-                        background: isActive ? '#9e1820' : 'transparent',
-                        color: isActive ? '#ffffff' : '#736b5e',
-                        boxShadow: isActive ? '0 2px 6px rgba(158, 24, 32, 0.3)' : 'none',
-                        letterSpacing: '0.4px',
-                        transition: 'all 0.15s ease',
-                      }}
-                    >
-                      {stg}
-                    </div>
-                  )
-                })}
+              {/* Centered Segmented Pill Selector: MVP | GTM | Growth */}
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center' }}>
+                <div
+                  style={{
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    background: '#f8f5ed',
+                    borderRadius: 100,
+                    padding: '4px 6px',
+                    border: '1px solid #e8e2d4',
+                    justifyContent: 'space-between',
+                  }}
+                >
+                  {(['MVP', 'GTM', 'Growth'] as const).map((stg) => {
+                    const isActive = (data.stage || 'Growth') === stg
+                    return (
+                      <div
+                        key={stg}
+                        style={{
+                          padding: '6px 20px',
+                          borderRadius: 100,
+                          fontSize: 12.5,
+                          fontWeight: 800,
+                          background: isActive ? '#9e1820' : 'transparent',
+                          color: isActive ? '#ffffff' : '#736b5e',
+                          boxShadow: isActive ? '0 2px 8px rgba(158, 24, 32, 0.3)' : 'none',
+                          letterSpacing: '0.4px',
+                          transition: 'all 0.15s ease',
+                        }}
+                      >
+                        {stg}
+                      </div>
+                    )
+                  })}
+                </div>
               </div>
             </div>
 
@@ -782,78 +778,83 @@ export function CompanyTvDisplay({
             <div style={cardStyle}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <Heart style={{ width: 14, height: 14, color: '#9e1820' }} />
-                  <span style={{ fontSize: 11, fontWeight: 800, color: '#1e1b18' }}>Overall Health</span>
+                  <Heart style={{ width: 16, height: 16, color: '#9e1820' }} />
+                  <span style={{ fontSize: 12.5, fontWeight: 800, color: '#1e1b18' }}>Overall Health</span>
                 </div>
                 <div
                   style={{
                     display: 'flex',
                     alignItems: 'center',
-                    gap: 4,
-                    fontSize: 9.5,
+                    gap: 5,
+                    fontSize: 11,
                     fontWeight: 700,
                     color: '#059669',
                   }}
                 >
-                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#059669' }} />
+                  <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#059669' }} />
                   <span>{data.healthScore?.status || 'On Track'}</span>
                 </div>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-                <div>
-                  <span style={{ fontSize: 32, fontWeight: 900, color: '#1e1b18', lineHeight: 1 }}>
-                    {data.healthScore?.score || 76}
-                  </span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#8c8270', marginLeft: 2 }}>/100</span>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 6 }}>
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
+                  <div>
+                    <span style={{ fontSize: 44, fontWeight: 900, color: '#1e1b18', lineHeight: 1 }}>
+                      {data.healthScore?.score || 76}
+                    </span>
+                    <span style={{ fontSize: 18, fontWeight: 700, color: '#8c8270', marginLeft: 3 }}>/100</span>
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 11.5,
+                      color: '#736b5e',
+                      fontStyle: 'italic',
+                      fontFamily: 'var(--font-serif)',
+                      maxWidth: '55%',
+                      textAlign: 'right',
+                      lineHeight: 1.25,
+                    }}
+                  >
+                    {data.healthScore?.motto || 'Building something brighter.'}
+                  </div>
                 </div>
-                <div
-                  style={{
-                    fontSize: 9.5,
-                    color: '#736b5e',
-                    fontStyle: 'italic',
-                    fontFamily: 'var(--font-serif)',
-                    maxWidth: '55%',
-                    textAlign: 'right',
-                    lineHeight: 1.2,
-                  }}
-                >
-                  {data.healthScore?.motto || 'Building something brighter.'}
-                </div>
-              </div>
 
-              {/* Rounded Crimson Horizontal Progress Bar */}
-              <div style={{ width: '100%', height: 7, borderRadius: 100, background: '#fae8e8', overflow: 'hidden' }}>
-                <div
-                  style={{
-                    width: `${data.healthScore?.score || 76}%`,
-                    height: '100%',
-                    borderRadius: 100,
-                    background: 'linear-gradient(90deg, #9e1820 0%, #ca2f2b 100%)',
-                  }}
-                />
+                <div style={{ width: '100%', height: 9, borderRadius: 100, background: '#fae8e8', overflow: 'hidden' }}>
+                  <div
+                    style={{
+                      width: `${data.healthScore?.score || 76}%`,
+                      height: '100%',
+                      borderRadius: 100,
+                      background: 'linear-gradient(90deg, #9e1820 0%, #ca2f2b 100%)',
+                    }}
+                  />
+                </div>
               </div>
             </div>
 
             {/* Card 1.3: This Week's Priorities */}
             <div style={cardStyle}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <ListOrdered style={{ width: 14, height: 14, color: '#9e1820' }} />
-                <span style={{ fontSize: 11, fontWeight: 800, color: '#1e1b18' }}>This Week&apos;s Priorities</span>
+                <ListOrdered style={{ width: 16, height: 16, color: '#9e1820' }} />
+                <span style={{ fontSize: 12.5, fontWeight: 800, color: '#1e1b18' }}>This Week&apos;s Priorities</span>
               </div>
-              <div style={{ fontSize: 38, fontWeight: 900, color: '#1e1b18', lineHeight: 1, paddingLeft: 2 }}>
-                {data.priorities?.total || 5}
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', paddingLeft: 4 }}>
+                <div style={{ fontSize: 54, fontWeight: 900, color: '#1e1b18', lineHeight: 1 }}>
+                  {data.priorities?.total || 5}
+                </div>
               </div>
             </div>
 
             {/* Card 1.4: Completed */}
             <div style={cardStyle}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <CheckCircle2 style={{ width: 14, height: 14, color: '#9e1820' }} />
-                <span style={{ fontSize: 11, fontWeight: 800, color: '#1e1b18' }}>Completed</span>
+                <CheckCircle2 style={{ width: 16, height: 16, color: '#9e1820' }} />
+                <span style={{ fontSize: 12.5, fontWeight: 800, color: '#1e1b18' }}>Completed</span>
               </div>
-              <div style={{ fontSize: 32, fontWeight: 900, color: '#1e1b18', lineHeight: 1, paddingLeft: 2 }}>
-                {data.priorities?.completed || 4} of {data.priorities?.total || 5}
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', paddingLeft: 4 }}>
+                <div style={{ fontSize: 46, fontWeight: 900, color: '#1e1b18', lineHeight: 1 }}>
+                  {data.priorities?.completed || 4} of {data.priorities?.total || 5}
+                </div>
               </div>
             </div>
           </div>
@@ -868,32 +869,32 @@ export function CompanyTvDisplay({
               minHeight: 0,
               display: 'grid',
               gridTemplateColumns: '1.05fr 1.15fr 1.25fr',
-              gap: 9,
+              gap: 10,
             }}
           >
             {/* Card 2.1: Weekly Execution */}
             <div style={cardStyle}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <div style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid #9e1820', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <div style={{ width: 4, height: 4, borderRadius: '50%', background: '#9e1820' }} />
+                <div style={{ width: 16, height: 16, borderRadius: '50%', border: '2.5px solid #9e1820', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: 5, height: 5, borderRadius: '50%', background: '#9e1820' }} />
                 </div>
-                <span style={{ fontSize: 11, fontWeight: 800, color: '#1e1b18' }}>Weekly Execution</span>
+                <span style={{ fontSize: 13, fontWeight: 800, color: '#1e1b18' }}>Weekly Execution</span>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+              <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: 20 }}>
                 {/* SVG Radial Donut Meter */}
-                <div style={{ position: 'relative', width: 62, height: 62, flexShrink: 0 }}>
-                  <svg width="62" height="62" viewBox="0 0 44 44">
-                    <circle cx="22" cy="22" r="17" fill="none" stroke="#fae8e8" strokeWidth="5" />
+                <div style={{ position: 'relative', width: 96, height: 96, flexShrink: 0 }}>
+                  <svg width="96" height="96" viewBox="0 0 54 54">
+                    <circle cx="27" cy="27" r="21" fill="none" stroke="#fae8e8" strokeWidth="6.5" />
                     <circle
-                      cx="22"
-                      cy="22"
-                      r="17"
+                      cx="27"
+                      cy="27"
+                      r="21"
                       fill="none"
                       stroke="#9e1820"
-                      strokeWidth="5"
-                      strokeDasharray={`${(data.priorities?.rate || 80) * 1.068} 107`}
-                      strokeDashoffset="26.75"
+                      strokeWidth="6.5"
+                      strokeDasharray={`${(data.priorities?.rate || 80) * 1.319} 132`}
+                      strokeDashoffset="33"
                       strokeLinecap="round"
                     />
                   </svg>
@@ -904,7 +905,7 @@ export function CompanyTvDisplay({
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      fontSize: 13,
+                      fontSize: 20,
                       fontWeight: 900,
                       color: '#1e1b18',
                     }}
@@ -917,16 +918,16 @@ export function CompanyTvDisplay({
                 <div>
                   <div
                     style={{
-                      fontSize: 10,
+                      fontSize: 14,
                       fontWeight: 900,
                       color: '#9e1820',
-                      letterSpacing: '0.6px',
+                      letterSpacing: '0.8px',
                       textTransform: 'uppercase',
                     }}
                   >
                     CONSISTENT MOMENTUM
                   </div>
-                  <div style={{ fontSize: 9.5, color: '#736b5e', lineHeight: 1.3, marginTop: 2 }}>
+                  <div style={{ fontSize: 12, color: '#736b5e', lineHeight: 1.35, marginTop: 4 }}>
                     Ideas to impact, week by week.
                   </div>
                 </div>
@@ -936,20 +937,20 @@ export function CompanyTvDisplay({
             {/* Card 2.2: Monthly Target */}
             <div style={cardStyle}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Target style={{ width: 14, height: 14, color: '#9e1820' }} />
-                <span style={{ fontSize: 11, fontWeight: 800, color: '#1e1b18' }}>Monthly Target</span>
+                <Target style={{ width: 16, height: 16, color: '#9e1820' }} />
+                <span style={{ fontSize: 13, fontWeight: 800, color: '#1e1b18' }}>Monthly Target</span>
               </div>
 
-              <div>
-                <div style={{ fontSize: 28, fontWeight: 900, color: '#1e1b18', lineHeight: 1 }}>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 14 }}>
+                <div style={{ fontSize: 48, fontWeight: 900, color: '#1e1b18', lineHeight: 1 }}>
                   {data.financials?.monthlyTarget || '₹10L'}
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
-                  <span style={{ fontSize: 11, fontWeight: 800, color: '#1e1b18', whiteSpace: 'nowrap' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <span style={{ fontSize: 14, fontWeight: 800, color: '#1e1b18', whiteSpace: 'nowrap' }}>
                     Achieved: {data.financials?.achievedAmount || '₹7.2L'}
                   </span>
-                  <div style={{ flex: 1, height: 7, borderRadius: 100, background: '#fae8e8', overflow: 'hidden' }}>
+                  <div style={{ flex: 1, height: 9, borderRadius: 100, background: '#fae8e8', overflow: 'hidden' }}>
                     <div
                       style={{
                         width: `${data.financials?.targetRate || 72}%`,
@@ -958,7 +959,7 @@ export function CompanyTvDisplay({
                       }}
                     />
                   </div>
-                  <span style={{ fontSize: 10, fontWeight: 800, color: '#1e1b18' }}>
+                  <span style={{ fontSize: 13, fontWeight: 800, color: '#1e1b18' }}>
                     {data.financials?.targetRate || 72}%
                   </span>
                 </div>
@@ -968,42 +969,42 @@ export function CompanyTvDisplay({
             {/* Card 2.3: Financials (This Month) + Integrated Runway */}
             <div style={cardStyle}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <BarChart3 style={{ width: 14, height: 14, color: '#9e1820' }} />
-                <span style={{ fontSize: 11, fontWeight: 800, color: '#1e1b18' }}>Financials (This Month)</span>
+                <BarChart3 style={{ width: 16, height: 16, color: '#9e1820' }} />
+                <span style={{ fontSize: 13, fontWeight: 800, color: '#1e1b18' }}>Financials (This Month)</span>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 12, alignItems: 'center' }}>
+              <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1.25fr 1fr', gap: 16, alignItems: 'center' }}>
                 {/* Left: Revenue vs Burn */}
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
                   <div>
-                    <div style={{ fontSize: 9, color: '#736b5e' }}>Revenue</div>
-                    <div style={{ fontSize: 15, fontWeight: 900, color: '#1e1b18', marginTop: 1 }}>
+                    <div style={{ fontSize: 11, color: '#736b5e' }}>Revenue</div>
+                    <div style={{ fontSize: 22, fontWeight: 900, color: '#1e1b18', marginTop: 2 }}>
                       {data.financials?.revenue || '₹7.2L'}
                     </div>
-                    <div style={{ width: '100%', height: 26, background: '#9e1820', borderRadius: 4, marginTop: 4 }} />
+                    <div style={{ width: '100%', height: 46, background: '#9e1820', borderRadius: 5, marginTop: 6 }} />
                   </div>
                   <div>
-                    <div style={{ fontSize: 9, color: '#736b5e' }}>Burn</div>
-                    <div style={{ fontSize: 15, fontWeight: 900, color: '#1e1b18', marginTop: 1 }}>
+                    <div style={{ fontSize: 11, color: '#736b5e' }}>Burn</div>
+                    <div style={{ fontSize: 22, fontWeight: 900, color: '#1e1b18', marginTop: 2 }}>
                       {data.financials?.burn || '₹3.1L'}
                     </div>
-                    <div style={{ width: '100%', height: 26, background: '#fca5a5', borderRadius: 4, marginTop: 4 }} />
+                    <div style={{ width: '100%', height: 46, background: '#fca5a5', borderRadius: 5, marginTop: 6 }} />
                   </div>
                 </div>
 
                 {/* Right: Runway Column */}
-                <div style={{ borderLeft: '1px solid #f0eadb', paddingLeft: 10 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <Hourglass style={{ width: 11, height: 11, color: '#9e1820' }} />
-                    <span style={{ fontSize: 9.5, fontWeight: 800, color: '#1e1b18' }}>Runway</span>
+                <div style={{ borderLeft: '1px solid #eee5d3', paddingLeft: 16 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <Hourglass style={{ width: 14, height: 14, color: '#9e1820' }} />
+                    <span style={{ fontSize: 13, fontWeight: 800, color: '#1e1b18' }}>Runway</span>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 3, marginTop: 2 }}>
-                    <span style={{ fontSize: 24, fontWeight: 900, color: '#1e1b18', lineHeight: 1 }}>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 4, marginTop: 6 }}>
+                    <span style={{ fontSize: 40, fontWeight: 900, color: '#1e1b18', lineHeight: 1 }}>
                       {data.financials?.runwayMonths || 8}
                     </span>
-                    <span style={{ fontSize: 11, fontWeight: 800, color: '#1e1b18' }}>Months</span>
+                    <span style={{ fontSize: 16, fontWeight: 800, color: '#1e1b18' }}>Months</span>
                   </div>
-                  <div style={{ fontSize: 8.5, color: '#059669', fontWeight: 600, marginTop: 2, lineHeight: 1.15 }}>
+                  <div style={{ fontSize: 11, color: '#059669', fontWeight: 600, marginTop: 4, lineHeight: 1.25 }}>
                     {data.financials?.runwayStatus || 'Solid runway to scale.'}
                   </div>
                 </div>
@@ -1021,48 +1022,48 @@ export function CompanyTvDisplay({
               minHeight: 0,
               display: 'grid',
               gridTemplateColumns: '1.05fr 1.25fr 1.15fr',
-              gap: 9,
+              gap: 10,
             }}
           >
             {/* Card 3.1: Growth Metrics (This Week) */}
             <div style={cardStyle}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <TrendingUp style={{ width: 14, height: 14, color: '#9e1820' }} />
-                <span style={{ fontSize: 11, fontWeight: 800, color: '#1e1b18' }}>Growth Metrics (This Week)</span>
+                <TrendingUp style={{ width: 16, height: 16, color: '#9e1820' }} />
+                <span style={{ fontSize: 13, fontWeight: 800, color: '#1e1b18' }}>Growth Metrics (This Week)</span>
               </div>
 
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
+              <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 10, alignItems: 'center' }}>
                 <div>
-                  <div style={{ fontSize: 9, color: '#736b5e' }}>Leads</div>
-                  <div style={{ fontSize: 18, fontWeight: 900, color: '#1e1b18', lineHeight: 1.1, marginTop: 2 }}>
+                  <div style={{ fontSize: 11.5, color: '#736b5e' }}>Leads</div>
+                  <div style={{ fontSize: 34, fontWeight: 900, color: '#1e1b18', lineHeight: 1.05, marginTop: 4 }}>
                     {data.growth?.leads || 840}
                   </div>
-                  <div style={{ fontSize: 9, fontWeight: 800, color: '#059669', marginTop: 3 }}>
+                  <div style={{ fontSize: 11.5, fontWeight: 800, color: '#059669', marginTop: 4 }}>
                     ▲ {data.growth?.leadsChange || '+18%'}
                   </div>
-                  <div style={{ fontSize: 8, color: '#8c8270' }}>vs last week</div>
+                  <div style={{ fontSize: 10, color: '#8c8270' }}>vs last week</div>
                 </div>
 
                 <div>
-                  <div style={{ fontSize: 9, color: '#736b5e' }}>Customers</div>
-                  <div style={{ fontSize: 18, fontWeight: 900, color: '#1e1b18', lineHeight: 1.1, marginTop: 2 }}>
+                  <div style={{ fontSize: 11.5, color: '#736b5e' }}>Customers</div>
+                  <div style={{ fontSize: 34, fontWeight: 900, color: '#1e1b18', lineHeight: 1.05, marginTop: 4 }}>
                     {data.growth?.customers || 126}
                   </div>
-                  <div style={{ fontSize: 9, fontWeight: 800, color: '#059669', marginTop: 3 }}>
+                  <div style={{ fontSize: 11.5, fontWeight: 800, color: '#059669', marginTop: 4 }}>
                     ▲ {data.growth?.customersChange || '+24%'}
                   </div>
-                  <div style={{ fontSize: 8, color: '#8c8270' }}>vs last week</div>
+                  <div style={{ fontSize: 10, color: '#8c8270' }}>vs last week</div>
                 </div>
 
                 <div>
-                  <div style={{ fontSize: 9, color: '#736b5e' }}>CAC</div>
-                  <div style={{ fontSize: 18, fontWeight: 900, color: '#1e1b18', lineHeight: 1.1, marginTop: 2 }}>
+                  <div style={{ fontSize: 11.5, color: '#736b5e' }}>CAC</div>
+                  <div style={{ fontSize: 34, fontWeight: 900, color: '#1e1b18', lineHeight: 1.05, marginTop: 4 }}>
                     {data.growth?.cac || '₹420'}
                   </div>
-                  <div style={{ fontSize: 9, fontWeight: 800, color: '#059669', marginTop: 3 }}>
+                  <div style={{ fontSize: 11.5, fontWeight: 800, color: '#059669', marginTop: 4 }}>
                     ▼ {data.growth?.cacChange || '+12%'}
                   </div>
-                  <div style={{ fontSize: 8, color: '#8c8270' }}>vs last week</div>
+                  <div style={{ fontSize: 10, color: '#8c8270' }}>vs last week</div>
                 </div>
               </div>
             </div>
@@ -1071,84 +1072,86 @@ export function CompanyTvDisplay({
             <div style={cardStyle}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <BarChart3 style={{ width: 14, height: 14, color: '#9e1820' }} />
-                  <span style={{ fontSize: 11, fontWeight: 800, color: '#1e1b18' }}>Leads & Customers Trend</span>
+                  <BarChart3 style={{ width: 16, height: 16, color: '#9e1820' }} />
+                  <span style={{ fontSize: 13, fontWeight: 800, color: '#1e1b18' }}>Leads & Customers Trend</span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 8.5 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                    <span style={{ width: 5.5, height: 5.5, borderRadius: '50%', background: '#9e1820' }} />
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 10.5 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#9e1820' }} />
                     <span style={{ color: '#736b5e' }}>Leads</span>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                    <span style={{ width: 5.5, height: 5.5, borderRadius: '50%', background: '#fca5a5' }} />
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: '#fca5a5' }} />
                     <span style={{ color: '#736b5e' }}>Customers</span>
                   </div>
                 </div>
               </div>
 
-              <div style={{ width: '100%', height: 75 }}>
-                <ResponsiveContainer width="100%" height="100%">
-                  <RechartsBarChart
-                    data={data.growth?.weeklyTrend || []}
-                    margin={{ top: 2, right: 0, left: -26, bottom: -6 }}
-                    barGap={2}
-                  >
-                    <CartesianGrid strokeDasharray="2 2" stroke="#ede5d6" vertical={false} />
-                    <XAxis dataKey="day" tick={{ fontSize: 8, fill: '#736b5e' }} axisLine={false} tickLine={false} />
-                    <YAxis tick={{ fontSize: 8, fill: '#736b5e' }} axisLine={false} tickLine={false} />
-                    <Bar dataKey="leads" fill="#9e1820" radius={[2, 2, 0, 0]} isAnimationActive={false} barSize={8} />
-                    <Bar dataKey="customers" fill="#fca5a5" radius={[2, 2, 0, 0]} isAnimationActive={false} barSize={8} />
-                  </RechartsBarChart>
-                </ResponsiveContainer>
+              <div style={{ flex: 1, minHeight: 0, width: '100%', display: 'flex', alignItems: 'center' }}>
+                <div style={{ width: '100%', height: 130 }}>
+                  <ResponsiveContainer width="100%" height="100%">
+                    <RechartsBarChart
+                      data={data.growth?.weeklyTrend || []}
+                      margin={{ top: 4, right: 0, left: -22, bottom: -4 }}
+                      barGap={3}
+                    >
+                      <CartesianGrid strokeDasharray="2 2" stroke="#ede5d6" vertical={false} />
+                      <XAxis dataKey="day" tick={{ fontSize: 10, fill: '#736b5e' }} axisLine={false} tickLine={false} />
+                      <YAxis tick={{ fontSize: 10, fill: '#736b5e' }} axisLine={false} tickLine={false} domain={[0, 900]} ticks={[0, 300, 600, 900]} />
+                      <Bar dataKey="leads" fill="#9e1820" radius={[3, 3, 0, 0]} isAnimationActive={false} barSize={11} />
+                      <Bar dataKey="customers" fill="#fca5a5" radius={[3, 3, 0, 0]} isAnimationActive={false} barSize={11} />
+                    </RechartsBarChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
             </div>
 
             {/* Card 3.3: Quadrant Metric Card (Milestones, Blockers, Mentor, Founder Score) */}
             <div style={cardStyle}>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: 8, height: '100%' }}>
+              <div style={{ flex: 1, display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: 12, alignItems: 'center' }}>
                 {/* Top-Left: Key Milestones */}
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <Flag style={{ width: 11, height: 11, color: '#9e1820' }} />
-                    <span style={{ fontSize: 9.5, fontWeight: 800, color: '#1e1b18' }}>Key Milestones</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <Flag style={{ width: 14, height: 14, color: '#9e1820' }} />
+                    <span style={{ fontSize: 11.5, fontWeight: 800, color: '#1e1b18' }}>Key Milestones</span>
                   </div>
-                  <div style={{ fontSize: 16, fontWeight: 900, color: '#1e1b18', marginTop: 2 }}>
+                  <div style={{ fontSize: 26, fontWeight: 900, color: '#1e1b18', marginTop: 3 }}>
                     {data.execution?.milestonesCount || '7/10'}
                   </div>
-                  <div style={{ width: '85%', height: 5, borderRadius: 100, background: '#fae8e8', overflow: 'hidden', marginTop: 3 }}>
+                  <div style={{ width: '85%', height: 6, borderRadius: 100, background: '#fae8e8', overflow: 'hidden', marginTop: 4 }}>
                     <div style={{ width: '70%', height: '100%', background: '#9e1820' }} />
                   </div>
                 </div>
 
                 {/* Top-Right: Critical Blockers */}
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <AlertTriangle style={{ width: 11, height: 11, color: '#9e1820' }} />
-                    <span style={{ fontSize: 9.5, fontWeight: 800, color: '#1e1b18' }}>Critical Blockers</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <AlertTriangle style={{ width: 14, height: 14, color: '#9e1820' }} />
+                    <span style={{ fontSize: 11.5, fontWeight: 800, color: '#1e1b18' }}>Critical Blockers</span>
                   </div>
-                  <div style={{ fontSize: 20, fontWeight: 900, color: '#9e1820', marginTop: 2 }}>
+                  <div style={{ fontSize: 32, fontWeight: 900, color: '#9e1820', marginTop: 3 }}>
                     {data.execution?.criticalBlockersCount || 2}
                   </div>
                 </div>
 
                 {/* Bottom-Left: Mentor Rating */}
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <Star style={{ width: 11, height: 11, color: '#9e1820' }} />
-                    <span style={{ fontSize: 9.5, fontWeight: 800, color: '#1e1b18' }}>Mentor Rating</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <Star style={{ width: 14, height: 14, color: '#9e1820' }} />
+                    <span style={{ fontSize: 11.5, fontWeight: 800, color: '#1e1b18' }}>Mentor Rating</span>
                   </div>
-                  <div style={{ fontSize: 16, fontWeight: 900, color: '#1e1b18', marginTop: 2 }}>
+                  <div style={{ fontSize: 26, fontWeight: 900, color: '#1e1b18', marginTop: 3 }}>
                     {data.execution?.mentorRating || '8/10'}
                   </div>
                 </div>
 
                 {/* Bottom-Right: Founder Execution Score */}
                 <div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <Zap style={{ width: 11, height: 11, color: '#9e1820' }} />
-                    <span style={{ fontSize: 9.5, fontWeight: 800, color: '#1e1b18' }}>Founder Execution Score</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                    <Zap style={{ width: 14, height: 14, color: '#9e1820' }} />
+                    <span style={{ fontSize: 11.5, fontWeight: 800, color: '#1e1b18' }}>Founder Execution Score</span>
                   </div>
-                  <div style={{ fontSize: 16, fontWeight: 900, color: '#1e1b18', marginTop: 2 }}>
+                  <div style={{ fontSize: 26, fontWeight: 900, color: '#1e1b18', marginTop: 3 }}>
                     {data.execution?.founderExecutionScore || 82}%
                   </div>
                 </div>
@@ -1166,34 +1169,34 @@ export function CompanyTvDisplay({
               minHeight: 0,
               display: 'grid',
               gridTemplateColumns: '1.05fr 1.15fr 1.25fr',
-              gap: 9,
+              gap: 10,
             }}
           >
             {/* Card 4.1: Top Wins This Week */}
             <div style={{ ...cardStyle, position: 'relative' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, zIndex: 1 }}>
-                <Trophy style={{ width: 14, height: 14, color: '#9e1820' }} />
-                <span style={{ fontSize: 11, fontWeight: 800, color: '#1e1b18' }}>Top Wins This Week</span>
+                <Trophy style={{ width: 16, height: 16, color: '#9e1820' }} />
+                <span style={{ fontSize: 13, fontWeight: 800, color: '#1e1b18' }}>Top Wins This Week</span>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 5, zIndex: 1, margin: '4px 0' }}>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 10, zIndex: 1, margin: '4px 0' }}>
                 {(data.highlights?.topWins || [
                   'Revenue crossed ₹7.2L',
                   '4/5 priorities completed',
                   'Lead generation reached 840',
                 ]).slice(0, 3).map((win, idx) => (
-                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 10, fontWeight: 600, color: '#1e1b18' }}>
+                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13.5, fontWeight: 600, color: '#1e1b18' }}>
                     <span
                       style={{
-                        width: 16,
-                        height: 16,
+                        width: 24,
+                        height: 24,
                         borderRadius: '50%',
                         background: '#9e1820',
                         color: '#ffffff',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        fontSize: 9,
+                        fontSize: 12,
                         fontWeight: 900,
                         flexShrink: 0,
                       }}
@@ -1209,13 +1212,13 @@ export function CompanyTvDisplay({
               <div
                 style={{
                   position: 'absolute',
-                  right: 10,
-                  bottom: 2,
+                  right: 14,
+                  bottom: 6,
                   color: '#9e1820',
                   fontFamily: "'Caveat', cursive, sans-serif",
-                  fontSize: 26,
+                  fontSize: 44,
                   fontWeight: 700,
-                  transform: 'rotate(-5deg)',
+                  transform: 'rotate(-6deg)',
                   opacity: 0.38,
                   pointerEvents: 'none',
                 }}
@@ -1227,27 +1230,27 @@ export function CompanyTvDisplay({
             {/* Card 4.2: Critical Blockers */}
             <div style={{ ...cardStyle, position: 'relative' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, zIndex: 1 }}>
-                <AlertCircle style={{ width: 14, height: 14, color: '#9e1820' }} />
-                <span style={{ fontSize: 11, fontWeight: 800, color: '#1e1b18' }}>Critical Blockers</span>
+                <AlertCircle style={{ width: 16, height: 16, color: '#9e1820' }} />
+                <span style={{ fontSize: 13, fontWeight: 800, color: '#1e1b18' }}>Critical Blockers</span>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, zIndex: 1, margin: '4px 0' }}>
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', gap: 12, zIndex: 1, margin: '6px 0' }}>
                 {(data.highlights?.criticalBlockers || [
                   'Packaging vendor delay',
                   'Performance ad creative refresh needed',
                 ]).slice(0, 2).map((blocker, idx) => (
-                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 10, fontWeight: 600, color: '#1e1b18' }}>
+                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 10, fontSize: 13.5, fontWeight: 600, color: '#1e1b18' }}>
                     <span
                       style={{
-                        width: 16,
-                        height: 16,
+                        width: 24,
+                        height: 24,
                         borderRadius: '50%',
                         background: '#9e1820',
                         color: '#ffffff',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        fontSize: 9,
+                        fontSize: 12,
                         fontWeight: 900,
                         flexShrink: 0,
                       }}
@@ -1263,13 +1266,13 @@ export function CompanyTvDisplay({
               <div
                 style={{
                   position: 'absolute',
-                  right: 12,
-                  bottom: 2,
+                  right: 16,
+                  bottom: 6,
                   color: '#9e1820',
                   fontFamily: "'Caveat', cursive, sans-serif",
-                  fontSize: 26,
+                  fontSize: 44,
                   fontWeight: 700,
-                  transform: 'rotate(-5deg)',
+                  transform: 'rotate(-6deg)',
                   opacity: 0.38,
                   pointerEvents: 'none',
                 }}
@@ -1279,12 +1282,12 @@ export function CompanyTvDisplay({
             </div>
 
             {/* Card 4.3: STARTUP VALUE SPOTLIGHT */}
-            <div style={{ ...cardStyle, padding: '9px 12px' }}>
+            <div style={{ ...cardStyle, padding: '14px 18px', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                <Gem style={{ width: 13, height: 13, color: '#9e1820' }} />
+                <Gem style={{ width: 16, height: 16, color: '#9e1820' }} />
                 <span
                   style={{
-                    fontSize: 10,
+                    fontSize: 11.5,
                     fontWeight: 900,
                     color: '#9e1820',
                     letterSpacing: '0.8px',
@@ -1295,17 +1298,17 @@ export function CompanyTvDisplay({
                 </span>
               </div>
 
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, margin: '2px 0' }}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 8, margin: '4px 0' }}>
                 {(data.highlights?.valueSpotlight?.items || [
                   'Science-led skincare',
                   'Barrier-first routines',
                   'High repeat-purchase potential',
                 ]).map((item, idx) => (
-                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 9.5, fontWeight: 600, color: '#1e1b18' }}>
+                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, fontWeight: 600, color: '#1e1b18' }}>
                     <div
                       style={{
-                        width: 14,
-                        height: 14,
+                        width: 18,
+                        height: 18,
                         borderRadius: '50%',
                         background: '#9e1820',
                         display: 'flex',
@@ -1314,7 +1317,7 @@ export function CompanyTvDisplay({
                         flexShrink: 0,
                       }}
                     >
-                      <Check style={{ width: 9, height: 9, color: '#ffffff', strokeWidth: 3 }} />
+                      <Check style={{ width: 11, height: 11, color: '#ffffff', strokeWidth: 3 }} />
                     </div>
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item}</span>
                   </div>
@@ -1326,20 +1329,20 @@ export function CompanyTvDisplay({
                 style={{
                   background: '#9e1820',
                   borderRadius: 100,
-                  padding: '5px 12px',
+                  padding: '8px 18px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
                   color: '#ffffff',
                 }}
               >
-                <span style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: '0.3px' }}>
+                <span style={{ fontSize: 12, fontWeight: 800, letterSpacing: '0.3px' }}>
                   {data.highlights?.valueSpotlight?.bannerText || 'Brand built for repeat trust.'}
                 </span>
                 <div
                   style={{
-                    width: 16,
-                    height: 16,
+                    width: 22,
+                    height: 22,
                     borderRadius: '50%',
                     background: '#ffffff',
                     display: 'flex',
@@ -1347,7 +1350,7 @@ export function CompanyTvDisplay({
                     justifyContent: 'center',
                   }}
                 >
-                  <ArrowRight style={{ width: 9, height: 9, color: '#9e1820', strokeWidth: 3 }} />
+                  <ArrowRight style={{ width: 12, height: 12, color: '#9e1820', strokeWidth: 3 }} />
                 </div>
               </div>
             </div>
@@ -1364,7 +1367,7 @@ export function CompanyTvDisplay({
             borderRadius: 16,
             border: '1px solid rgba(255, 230, 200, 0.25)',
             boxShadow: '0 12px 36px rgba(108, 13, 18, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
-            padding: '16px 14px 14px 14px',
+            padding: '24px 18px 20px 18px',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -1380,10 +1383,10 @@ export function CompanyTvDisplay({
             style={{
               position: 'absolute',
               top: '25%',
-              width: 170,
-              height: 170,
+              width: 240,
+              height: 240,
               borderRadius: '50%',
-              background: 'radial-gradient(circle, rgba(246, 213, 133, 0.3) 0%, rgba(246, 213, 133, 0.05) 55%, transparent 70%)',
+              background: 'radial-gradient(circle, rgba(246, 213, 133, 0.35) 0%, rgba(246, 213, 133, 0.08) 55%, transparent 70%)',
               pointerEvents: 'none',
             }}
           />
@@ -1392,9 +1395,9 @@ export function CompanyTvDisplay({
           <div>
             <div
               style={{
-                fontSize: 13,
+                fontSize: 17,
                 fontWeight: 900,
-                letterSpacing: '2px',
+                letterSpacing: '2.5px',
                 color: '#ffffff',
                 textTransform: 'uppercase',
               }}
@@ -1405,9 +1408,9 @@ export function CompanyTvDisplay({
 
           {/* Golden Laurel Wreath + Circular Silhouette Portrait */}
           <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <div style={{ position: 'relative', width: 140, height: 140, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <div style={{ position: 'relative', width: 200, height: 200, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
               {/* Detailed Golden Laurel Wreath SVG */}
-              <svg width="140" height="140" viewBox="0 0 140 140" fill="none" style={{ position: 'absolute', inset: 0 }}>
+              <svg width="200" height="200" viewBox="0 0 140 140" fill="none" style={{ position: 'absolute', inset: 0 }}>
                 {/* Left Laurel Branch */}
                 <path d="M42 110 C25 90 22 55 46 28" stroke="#f6d585" strokeWidth="2.5" strokeLinecap="round" />
                 <path d="M42 100 C30 92 34 82 40 86" fill="#f6d585" />
@@ -1428,23 +1431,21 @@ export function CompanyTvDisplay({
               {/* Founder Circular Silhouette Portrait Frame */}
               <div
                 style={{
-                  width: 86,
-                  height: 86,
+                  width: 120,
+                  height: 120,
                   borderRadius: '50%',
                   background: 'radial-gradient(circle, #3d070b 0%, #150203 100%)',
-                  border: '2.5px solid #f6d585',
-                  boxShadow: '0 0 20px rgba(246, 213, 133, 0.45)',
+                  border: '3px solid #f6d585',
+                  boxShadow: '0 0 24px rgba(246, 213, 133, 0.45)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   overflow: 'hidden',
                 }}
               >
-                {/* Stylized Founder Silhouette with Subtle Lighting */}
-                <svg width="58" height="68" viewBox="0 0 58 68" fill="none">
-                  {/* Head */}
+                {/* Stylized Founder Silhouette */}
+                <svg width="80" height="92" viewBox="0 0 58 68" fill="none">
                   <circle cx="29" cy="22" r="14" fill="#fce7b2" fillOpacity="0.85" />
-                  {/* Shoulders */}
                   <path
                     d="M8 68 C8 46 16 40 29 40 C42 40 50 46 50 68 Z"
                     fill="#fce7b2"
@@ -1457,18 +1458,18 @@ export function CompanyTvDisplay({
             {/* 3D Folded Metallic Golden Ribbon */}
             <div
               style={{
-                marginTop: -16,
+                marginTop: -22,
                 position: 'relative',
                 zIndex: 5,
                 background: 'linear-gradient(180deg, #ffeaa7 0%, #f6c85f 40%, #df9a26 100%)',
                 color: '#730e13',
-                padding: '4px 14px',
-                borderRadius: 4,
-                boxShadow: '0 4px 14px rgba(0, 0, 0, 0.35)',
+                padding: '7px 20px',
+                borderRadius: 5,
+                boxShadow: '0 4px 16px rgba(0, 0, 0, 0.4)',
                 border: '1px solid #fff5cc',
-                fontSize: 10,
+                fontSize: 13,
                 fontWeight: 900,
-                letterSpacing: '1px',
+                letterSpacing: '1.2px',
                 textTransform: 'uppercase',
                 textShadow: '0 1px 0 rgba(255, 255, 255, 0.6)',
               }}
@@ -1480,46 +1481,46 @@ export function CompanyTvDisplay({
           {/* Citation Text */}
           <div
             style={{
-              fontSize: 11,
+              fontSize: 15,
               color: '#ffe6cf',
               fontStyle: 'italic',
               fontFamily: 'var(--font-serif)',
-              lineHeight: 1.4,
-              padding: '0 8px',
+              lineHeight: 1.5,
+              padding: '0 14px',
             }}
           >
             &ldquo;{data.founderOfTheWeek?.citation || 'Recognised for strongest weekly execution and milestone progress.'}&rdquo;
           </div>
 
           {/* Golden Hairline Divider with Diamond */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, width: '70%' }}>
-            <div style={{ flex: 1, height: 1, background: 'rgba(246, 213, 133, 0.35)' }} />
-            <span style={{ color: '#f6d585', fontSize: 9 }}>✦</span>
-            <div style={{ flex: 1, height: 1, background: 'rgba(246, 213, 133, 0.35)' }} />
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: '70%' }}>
+            <div style={{ flex: 1, height: 1, background: 'rgba(246, 213, 133, 0.4)' }} />
+            <span style={{ color: '#f6d585', fontSize: 12 }}>✦</span>
+            <div style={{ flex: 1, height: 1, background: 'rgba(246, 213, 133, 0.4)' }} />
           </div>
 
           {/* Bottom Motto */}
           <div>
             <div
               style={{
-                fontSize: 9.5,
+                fontSize: 13,
                 fontWeight: 900,
-                letterSpacing: '1.8px',
+                letterSpacing: '2.2px',
                 color: '#f6d585',
                 textTransform: 'uppercase',
-                lineHeight: 1.35,
+                lineHeight: 1.4,
               }}
             >
               BOLDER FOUNDERS
             </div>
             <div
               style={{
-                fontSize: 9.5,
+                fontSize: 13,
                 fontWeight: 900,
-                letterSpacing: '1.8px',
+                letterSpacing: '2.2px',
                 color: '#f6d585',
                 textTransform: 'uppercase',
-                lineHeight: 1.35,
+                lineHeight: 1.4,
               }}
             >
               BRIGHTER TOMORROW
@@ -1531,17 +1532,17 @@ export function CompanyTvDisplay({
       {/* ── FOOTER (FULL WIDTH, CLEAN TYPOGRAPHY) ── */}
       <footer
         style={{
-          height: 24,
+          height: 28,
           flexShrink: 0,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          fontSize: 9,
+          fontSize: 10.5,
           fontWeight: 800,
           letterSpacing: '1px',
           color: '#736b5e',
           textTransform: 'uppercase',
-          padding: '0 4px',
+          padding: '0 6px',
           borderTop: '1px solid rgba(158, 24, 32, 0.12)',
           zIndex: 10,
         }}
@@ -1555,17 +1556,17 @@ export function CompanyTvDisplay({
         </div>
 
         {/* Center Star with Hairline Rules */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: '22%' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, width: '24%' }}>
           <div style={{ flex: 1, height: 1, background: '#ded6c1' }} />
-          <span style={{ color: '#9e1820', fontSize: 11 }}>✦</span>
+          <span style={{ color: '#9e1820', fontSize: 13 }}>✦</span>
           <div style={{ flex: 1, height: 1, background: '#ded6c1' }} />
         </div>
 
         <div>
           <span>PEOPLE</span>
-          <span style={{ margin: '0 6px', opacity: 0.5 }}>×</span>
+          <span style={{ margin: '0 8px', opacity: 0.5 }}>×</span>
           <span>BRANDS</span>
-          <span style={{ margin: '0 6px', opacity: 0.5 }}>×</span>
+          <span style={{ margin: '0 8px', opacity: 0.5 }}>×</span>
           <span>BIGGER POSSIBILITIES</span>
         </div>
       </footer>
