@@ -125,39 +125,50 @@ export function calculateStartupHealth(
   })
 
   // 2. Domain Health Breakdown
-  const domainHealthList: DomainHealth[] = domains.map((d) => {
-    const dTasks = tasks.filter((t) => t.domain_id === d.id)
-    const dDone = dTasks.filter((t) => t.status === 'DONE').length
-    const dInProgress = dTasks.filter((t) => t.status === 'IN_PROGRESS').length
-    const dTodo = dTasks.filter((t) => t.status === 'TODO').length
-    const rate = dTasks.length > 0 ? Math.round((dDone / dTasks.length) * 100) : 0
+  const domainHealthList: DomainHealth[] = domains
+    .map((d) => {
+      const dTasks = tasks.filter((t) => t.domain_id === d.id)
+      const dDone = dTasks.filter((t) => t.status === 'DONE').length
+      const dInProgress = dTasks.filter((t) => t.status === 'IN_PROGRESS').length
+      const dTodo = dTasks.filter((t) => t.status === 'TODO').length
+      const rate = dTasks.length > 0 ? Math.round((dDone / dTasks.length) * 100) : 0
 
-    const dOverdue = dTasks.filter(
-      (t) => t.status !== 'DONE' && t.due_date && t.due_date < todayStr
-    ).length
+      const dOverdue = dTasks.filter(
+        (t) => t.status !== 'DONE' && t.due_date && t.due_date < todayStr
+      ).length
 
-    const isLagging = (dTasks.length > 0 && rate < 40 && dOverdue > 0) || dOverdue >= 2
+      const hasTasks = dTasks.length > 0
+      const isLagging = hasTasks && ((rate < 40 && dOverdue > 0) || dOverdue >= 2)
 
-    let lagReason = 'On track'
-    if (dOverdue > 0) {
-      lagReason = `${dOverdue} overdue deliverable${dOverdue > 1 ? 's' : ''}`
-    } else if (rate < 30 && dTasks.length > 0) {
-      lagReason = `Low completion rate (${rate}%)`
-    }
+      let lagReason = 'Pacing healthy'
+      if (!hasTasks) {
+        lagReason = 'No deliverables scheduled'
+      } else if (dOverdue > 0) {
+        lagReason = `${dOverdue} overdue deliverable${dOverdue > 1 ? 's' : ''}`
+      } else if (rate < 30 && dTasks.length > 0) {
+        lagReason = `Low completion rate (${rate}%)`
+      }
 
-    return {
-      id: d.id,
-      name: d.name,
-      total: dTasks.length,
-      done: dDone,
-      inProgress: dInProgress,
-      todo: dTodo,
-      rate,
-      isLagging,
-      lagReason,
-      overdueCount: dOverdue,
-    }
-  })
+      return {
+        id: d.id,
+        name: d.name,
+        total: dTasks.length,
+        done: dDone,
+        inProgress: dInProgress,
+        todo: dTodo,
+        rate,
+        isLagging,
+        lagReason,
+        overdueCount: dOverdue,
+      }
+    })
+    .sort((a, b) => {
+      if (a.total > 0 && b.total === 0) return -1
+      if (a.total === 0 && b.total > 0) return 1
+      if (a.isLagging && !b.isLagging) return -1
+      if (!a.isLagging && b.isLagging) return 1
+      return b.overdueCount - a.overdueCount
+    })
 
   // 3. Health Score Calculation (0 - 100)
   // Velocity Score: based on completion rate (up to 45 pts)

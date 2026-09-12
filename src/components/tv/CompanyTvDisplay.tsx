@@ -1968,8 +1968,46 @@ export function CompanyTvDisplay({
 
             <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', justifyContent: 'space-around', gap: 6 }}>
               {(laggingDomains.length > 0 ? laggingDomains : charts.domains).slice(0, 4).map((dom: any) => {
-                const isLagging = dom.isLagging || (dom.rate < sprintTargetPace - 15)
-                const isOnTrack = !isLagging && dom.rate >= sprintTargetPace
+                const hasTasks = (dom.total || 0) > 0
+                const isLagging = hasTasks && (dom.isLagging || (dom.rate < sprintTargetPace - 15))
+                const isOnTrack = hasTasks && !isLagging && dom.rate >= sprintTargetPace
+                const isInactive = !hasTasks
+
+                const badgeText = isInactive
+                  ? 'NO TASKS'
+                  : isLagging
+                  ? 'LAGGING'
+                  : isOnTrack
+                  ? 'ON TRACK'
+                  : 'PACING'
+
+                const badgeBg = isInactive
+                  ? 'rgba(0, 0, 0, 0.05)'
+                  : isLagging
+                  ? 'rgba(202, 47, 43, 0.12)'
+                  : isOnTrack
+                  ? 'rgba(16, 185, 129, 0.12)'
+                  : 'rgba(245, 158, 11, 0.12)'
+
+                const badgeColor = isInactive
+                  ? colors.textMuted
+                  : isLagging
+                  ? colors.brandRed
+                  : isOnTrack
+                  ? '#059669'
+                  : '#d97706'
+
+                const badgeBorder = isInactive
+                  ? 'rgba(0, 0, 0, 0.12)'
+                  : isLagging
+                  ? 'rgba(202, 47, 43, 0.25)'
+                  : isOnTrack
+                  ? 'rgba(16, 185, 129, 0.25)'
+                  : 'rgba(245, 158, 11, 0.25)'
+
+                const statusText = isInactive
+                  ? 'No sprint deliverables'
+                  : dom.lagReason || (isLagging ? `Trailing by ${sprintTargetPace - (dom.rate || 0)}%` : 'On Pace')
 
                 return (
                   <div key={dom.name} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
@@ -1981,8 +2019,14 @@ export function CompanyTvDisplay({
                         </span>
                       </div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span style={{ fontSize: 10, color: isLagging ? colors.brandRed : colors.textMuted, fontWeight: isLagging ? 800 : 500 }}>
-                          {dom.lagReason || (isLagging ? `Trailing by ${sprintTargetPace - (dom.rate || 0)}%` : 'On Pace')}
+                        <span
+                          style={{
+                            fontSize: 10,
+                            color: isLagging ? colors.brandRed : colors.textMuted,
+                            fontWeight: isLagging ? 800 : 500,
+                          }}
+                        >
+                          {statusText}
                         </span>
                         <span
                           style={{
@@ -1991,26 +2035,12 @@ export function CompanyTvDisplay({
                             fontSize: 9,
                             fontWeight: 900,
                             textTransform: 'uppercase',
-                            background: isLagging
-                              ? 'rgba(202, 47, 43, 0.12)'
-                              : isOnTrack
-                              ? 'rgba(16, 185, 129, 0.12)'
-                              : 'rgba(245, 158, 11, 0.12)',
-                            color: isLagging
-                              ? colors.brandRed
-                              : isOnTrack
-                              ? '#059669'
-                              : '#d97706',
-                            border: `1px solid ${
-                              isLagging
-                                ? 'rgba(202, 47, 43, 0.25)'
-                                : isOnTrack
-                                ? 'rgba(16, 185, 129, 0.25)'
-                                : 'rgba(245, 158, 11, 0.25)'
-                            }`,
+                            background: badgeBg,
+                            color: badgeColor,
+                            border: `1px solid ${badgeBorder}`,
                           }}
                         >
-                          {isLagging ? 'LAGGING' : isOnTrack ? 'ON TRACK' : 'PACING'}
+                          {badgeText}
                         </span>
                       </div>
                     </div>
@@ -2029,7 +2059,9 @@ export function CompanyTvDisplay({
                         style={{
                           width: `${Math.min(100, dom.rate || 0)}%`,
                           height: '100%',
-                          background: isLagging
+                          background: isInactive
+                            ? '#d1d5db'
+                            : isLagging
                             ? 'linear-gradient(90deg, #ca2f2b 0%, #ef4444 100%)'
                             : 'linear-gradient(90deg, #059669 0%, #10b981 100%)',
                           borderRadius: 3,
@@ -2037,19 +2069,21 @@ export function CompanyTvDisplay({
                         }}
                       />
                       {/* Sprint Target Pace Marker */}
-                      <div
-                        style={{
-                          position: 'absolute',
-                          left: `${sprintTargetPace}%`,
-                          top: -2,
-                          bottom: -2,
-                          width: 2,
-                          background: colors.textPrimary,
-                          borderRadius: 1,
-                          opacity: 0.7,
-                        }}
-                        title={`Target Pace: ${sprintTargetPace}%`}
-                      />
+                      {hasTasks && (
+                        <div
+                          style={{
+                            position: 'absolute',
+                            left: `${sprintTargetPace}%`,
+                            top: -2,
+                            bottom: -2,
+                            width: 2,
+                            background: colors.textPrimary,
+                            borderRadius: 1,
+                            opacity: 0.7,
+                          }}
+                          title={`Target Pace: ${sprintTargetPace}%`}
+                        />
+                      )}
                     </div>
                   </div>
                 )

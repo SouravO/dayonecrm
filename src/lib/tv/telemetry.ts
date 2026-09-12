@@ -919,39 +919,55 @@ export async function getTvTelemetry(idOrSlug: string): Promise<TvPayload | null
   })
 
   // Lagging Domains Analysis ("Where is lagging")
-  const laggingDomains: LaggingDomainItem[] = domainThroughput.map((dom) => {
-    const dObj = domains?.find((d) => d.name === dom.name)
-    const dTasks = dObj ? processedTasks.filter((t) => t.domain_id === dObj.id) : []
-    const overdueCount = dTasks.filter(
-      (t) => t.status !== 'DONE' && t.due_date && t.due_date < todayStr
-    ).length
+  const laggingDomains: LaggingDomainItem[] = domainThroughput
+    .map((dom) => {
+      const dObj = domains?.find((d) => d.name === dom.name)
+      const dTasks = dObj ? processedTasks.filter((t) => t.domain_id === dObj.id) : []
+      const overdueCount = dTasks.filter(
+        (t) => t.status !== 'DONE' && t.due_date && t.due_date < todayStr
+      ).length
 
-    const isLagging =
-      (dom.total > 0 && dom.rate < Math.max(10, sprintTargetPace - 15)) ||
-      overdueCount > 0
+      const hasTasks = dom.total > 0
+      const isLagging =
+        hasTasks &&
+        ((dom.rate < Math.max(10, sprintTargetPace - 15)) || overdueCount > 0)
 
-    let lagReason = 'Pacing healthy'
-    if (overdueCount > 0) {
-      lagReason = `${overdueCount} overdue deliverable${overdueCount > 1 ? 's' : ''}`
-    } else if (dom.rate < sprintTargetPace - 20) {
-      lagReason = `Trailing target pace by ${sprintTargetPace - dom.rate}%`
-    } else if (dom.done === 0 && dom.total > 0) {
-      lagReason = '0 deliverables completed yet'
-    }
+      let lagReason = 'Pacing healthy'
+      if (!hasTasks) {
+        lagReason = 'No deliverables scheduled'
+      } else if (overdueCount > 0) {
+        lagReason = `${overdueCount} overdue deliverable${overdueCount > 1 ? 's' : ''}`
+      } else if (dom.rate < sprintTargetPace - 20) {
+        lagReason = `Trailing target pace by ${sprintTargetPace - dom.rate}%`
+      } else if (dom.done === 0 && dom.total > 0) {
+        lagReason = '0 deliverables completed yet'
+      }
 
-    return {
-      name: dom.name,
-      total: dom.total,
-      done: dom.done,
-      inProgress: dom.inProgress,
-      todo: dom.todo,
-      rate: dom.rate,
-      targetPace: sprintTargetPace,
-      isLagging,
-      lagReason,
-      overdueCount,
-    }
-  })
+      return {
+        name: dom.name,
+        total: dom.total,
+        done: dom.done,
+        inProgress: dom.inProgress,
+        todo: dom.todo,
+        rate: dom.rate,
+        targetPace: sprintTargetPace,
+        isLagging,
+        lagReason,
+        overdueCount,
+      }
+    })
+    .sort((a, b) => {
+      // 1. Domains with active deliverables come first
+      if (a.total > 0 && b.total === 0) return -1
+      if (a.total === 0 && b.total > 0) return 1
+      // 2. If both have tasks, prioritize lagging domains
+      if (a.isLagging && !b.isLagging) return -1
+      if (!a.isLagging && b.isLagging) return 1
+      // 3. Overdue count descending
+      if (b.overdueCount !== a.overdueCount) return b.overdueCount - a.overdueCount
+      // 4. Rate ascending (lower completion rate first)
+      return a.rate - b.rate
+    })
 
   // 9. Compute Quality Distribution
   const qualityData = [
