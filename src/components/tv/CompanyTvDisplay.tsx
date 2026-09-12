@@ -337,36 +337,43 @@ export function CompanyTvDisplay({
     }
   }
 
-  // Signature Warm Light Cream Theme Palette
+  // Studio Telemetry Warm Editorial Cream Palette (matching reference design)
   const colors = {
-    bg: '#f6f2db',
-    canvasGradient: 'radial-gradient(circle at 50% -10%, #fcfbf5 0%, #f6f2db 100%)',
+    bg: '#f5eedc',
+    canvasGradient: 'linear-gradient(180deg, #f7f1e1 0%, #f4edd9 100%)',
     cardBg: '#ffffff',
-    cardBorder: '#e5dfcb',
-    cardHighlight: 'rgba(255, 255, 255, 0.9)',
-    headerBg: 'rgba(253, 251, 246, 0.94)',
-    textPrimary: '#1e1b18',
-    textSecondary: '#5a5348',
-    textMuted: '#8c8375',
+    cardBorder: '#e7ddcb',
+    cardShadow: '0 1px 3px rgba(30, 27, 24, 0.04), 0 1px 2px rgba(30, 27, 24, 0.02)',
+    headerBg: '#f5eedc',
+    textPrimary: '#18181b',
+    textSecondary: '#4b5563',
+    textMuted: '#78716c',
     brandRed: '#ca2f2b',
+    brandRedDark: '#991b1b',
+    brandRedSoft: '#f87171',
+    brandRedFaint: '#fef2f2',
+    brandRedBorder: '#fecaca',
     brandRedDim: 'rgba(202, 47, 43, 0.08)',
     brandRedGlow: 'rgba(202, 47, 43, 0.22)',
-    gridLine: '#e6decb',
-    chartIdeal: '#aba196',
-    subtleCard: '#fbf9f1',
-    accentBlue: '#0369a1',
-    accentGreen: '#059669',
-    accentAmber: '#b45309',
-    accentPurple: '#6d28d9',
+    brandWatermark: 'rgba(202, 47, 43, 0.25)',
+    gridLine: '#ede5d6',
+    chartIdeal: '#a8a29e',
+    subtleCard: '#fcfbf8',
+    accentBlue: '#0284c7',
+    accentGreen: '#15803d',
+    accentGreenBg: '#ecfdf5',
+    accentGreenBorder: '#bbf7d0',
+    accentAmber: '#d97706',
+    accentPurple: '#7c3aed',
   }
 
   const { startup, sprint, metrics, charts, deliverables, recentActivity } = data
 
   const statusBadgeConfig = {
-    AHEAD: { label: 'AHEAD OF SCHEDULE', bg: '#059669', color: '#ffffff' },
-    ON_TRACK: { label: 'ON TRACK', bg: '#0369a1', color: '#ffffff' },
-    BEHIND: { label: 'PACE BEHIND', bg: '#d97706', color: '#ffffff' },
-    AT_RISK: { label: 'AT RISK', bg: '#ca2f2b', color: '#ffffff' },
+    AHEAD: { label: 'AHEAD OF SCHEDULE', bg: '#ecfdf5', color: '#15803d', border: '#bbf7d0' },
+    ON_TRACK: { label: 'ON TRACK', bg: '#ecfdf5', color: '#15803d', border: '#bbf7d0' },
+    BEHIND: { label: 'PACE BEHIND', bg: '#fef3c7', color: '#b45309', border: '#fde68a' },
+    AT_RISK: { label: 'AT RISK', bg: '#fef2f2', color: '#ca2f2b', border: '#fecaca' },
   }[sprint.status]
 
   // Filter startups for dropdown
@@ -429,7 +436,7 @@ export function CompanyTvDisplay({
         </div>
       )}
 
-      {/* ── 1. TV Executive Header Bar ── */}
+      {/* ── 1. TV Executive Header Bar (Matching Reference Image) ── */}
       <header
         style={{
           height: 60,
@@ -444,50 +451,176 @@ export function CompanyTvDisplay({
           zIndex: 40,
         }}
       >
-        {/* Left: Studio Branding + Company Selector with Swapping Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          <Link href="/tv" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Logo size="icon" />
-            <div style={{ lineHeight: 1 }}>
-              <div style={{ fontSize: 13, fontWeight: 800, letterSpacing: '-0.3px', color: colors.textPrimary }}>
-                DAY ONE
-              </div>
-              <div
-                className="font-serif-italic"
-                style={{ fontSize: 10, color: colors.textMuted, marginTop: 2 }}
-              >
-                tv mission control
-              </div>
+        {/* Left: Studio Branding + Title Block matching reference design */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          <Link href="/tv" style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ fontSize: 24, fontWeight: 900, color: colors.brandRed, letterSpacing: '-0.5px', lineHeight: 1 }}>
+              dayone
+            </div>
+            <div style={{ fontSize: 9.5, fontWeight: 700, color: colors.brandRed, letterSpacing: '0.2px', marginTop: 1 }}>
+              venture studio by iQue
             </div>
           </Link>
 
-          <div style={{ height: 26, width: 1, background: colors.cardBorder }} />
+          <div style={{ height: 32, width: 1, background: colors.cardBorder }} />
+
+          <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.15 }}>
+            <div style={{ fontSize: 9, fontWeight: 800, color: colors.brandRed, letterSpacing: '0.8px', textTransform: 'uppercase' }}>
+              Venture Studio Dashboard
+            </div>
+            <div style={{ fontSize: 13, fontWeight: 900, color: colors.textPrimary, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+              Common Performance System
+            </div>
+            <div style={{ fontSize: 10, color: colors.textMuted, fontWeight: 500 }}>
+              One system. 5 startups. Distinct journeys.
+            </div>
+          </div>
+        </div>
+
+        {/* Center: Live Telemetry Stream + Auto-Cycle Carousel Control + Clock */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          {/* Live Stream Badge */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '4px 12px',
+              borderRadius: 100,
+              background: colors.accentGreenBg,
+              border: `1px solid ${colors.accentGreenBorder}`,
+              fontSize: 10.5,
+              fontWeight: 800,
+              letterSpacing: '0.6px',
+              color: colors.accentGreen,
+            }}
+          >
+            <span
+              style={{
+                width: 6,
+                height: 6,
+                borderRadius: '50%',
+                background: colors.accentGreen,
+                display: 'inline-block',
+              }}
+            />
+            <span>LIVE TELEMETRY STREAM</span>
+            <span style={{ opacity: 0.75, fontSize: 10, fontFamily: 'var(--font-mono)' }}>
+              ({countdown}s)
+            </span>
+          </div>
+
+          {/* Auto-Cycle / Wall TV Carousel Toggle Button */}
+          {allStartups.length > 1 && (
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+                background: isAutoCycle ? '#fee2e2' : colors.cardBg,
+                border: `1px solid ${isAutoCycle ? colors.brandRed : colors.cardBorder}`,
+                padding: '4px 12px',
+                borderRadius: 100,
+                fontSize: 10.5,
+                fontWeight: 700,
+                color: isAutoCycle ? colors.brandRed : colors.textSecondary,
+                cursor: 'pointer',
+                transition: 'all 0.15s ease',
+              }}
+              onClick={toggleAutoCycle}
+              title="Toggle automatic cycling between companies (Spacebar)"
+            >
+              {isAutoCycle ? (
+                <Pause className="w-3.5 h-3.5 text-red-600" />
+              ) : (
+                <Play className="w-3.5 h-3.5" />
+              )}
+              <span>Auto-Cycle: {isAutoCycle ? `${autoCycleSeconds}s` : 'OFF'}</span>
+
+              {isAutoCycle && (
+                <span
+                  style={{
+                    fontSize: 9.5,
+                    padding: '1px 6px',
+                    borderRadius: 10,
+                    background: colors.brandRed,
+                    color: '#ffffff',
+                    fontWeight: 800,
+                    marginLeft: 2,
+                  }}
+                >
+                  {currentStartupIndex + 1}/{allStartups.length}
+                </span>
+              )}
+            </div>
+          )}
+
+          {/* Clock */}
+          <div style={{ textAlign: 'right', minWidth: 90, marginLeft: 4 }}>
+            <div
+              style={{
+                fontSize: 14,
+                fontWeight: 800,
+                fontFamily: 'var(--font-mono)',
+                color: colors.textPrimary,
+                letterSpacing: '0.5px',
+                lineHeight: 1.1,
+              }}
+            >
+              {clock || '12:00:00'}
+            </div>
+            <div style={{ fontSize: 9.5, color: colors.textMuted, marginTop: 1 }}>
+              {clockDate}
+            </div>
+          </div>
+        </div>
+
+        {/* Right: Screen count + Company Selector with Spotlight badge + Controls */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          {/* Screen Indicator */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', lineHeight: 1.2 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontSize: 9.5, fontWeight: 800, color: colors.textPrimary, letterSpacing: '0.8px', textTransform: 'uppercase' }}>
+                STARTUP SCREEN {String(currentStartupIndex + 1).padStart(2, '0')} / {String(allStartups.length || 5).padStart(2, '0')}
+              </span>
+              <div style={{ display: 'flex', gap: 3, alignItems: 'center' }}>
+                <span style={{ width: 12, height: 4, borderRadius: 2, background: colors.brandRed }} />
+                <span style={{ width: 4, height: 4, borderRadius: '50%', background: '#d4d4d8' }} />
+                <span style={{ width: 4, height: 4, borderRadius: '50%', background: '#d4d4d8' }} />
+                <span style={{ width: 4, height: 4, borderRadius: '50%', background: '#d4d4d8' }} />
+              </div>
+            </div>
+            <div style={{ fontSize: 9, fontWeight: 700, color: colors.textMuted, letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+              Weekly Performance Overview
+            </div>
+          </div>
 
           {/* Company Identity & Swap Dropdown Trigger */}
           <div style={{ position: 'relative' }} ref={dropdownRef}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
               {allStartups.length > 1 && (
                 <button
                   onClick={handlePrevStartup}
                   title="Previous Company (← Arrow)"
                   style={{
-                    background: colors.subtleCard,
+                    background: colors.cardBg,
                     border: `1px solid ${colors.cardBorder}`,
                     color: colors.textSecondary,
-                    width: 32,
-                    height: 32,
+                    width: 34,
+                    height: 40,
                     borderRadius: 8,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     cursor: 'pointer',
+                    boxShadow: colors.cardShadow,
                   }}
                 >
                   <ChevronLeft className="w-4 h-4" />
                 </button>
               )}
 
-              {/* Main Company Dropdown Trigger */}
+              {/* Main Company Dropdown Trigger matching reference */}
               <button
                 onClick={() => setIsDropdownOpen(!isDropdownOpen)}
                 title="Click to switch company"
@@ -495,32 +628,34 @@ export function CompanyTvDisplay({
                   display: 'flex',
                   alignItems: 'center',
                   gap: 10,
-                  background: isDropdownOpen ? colors.cardBorder : colors.subtleCard,
+                  background: colors.cardBg,
                   border: `1px solid ${isDropdownOpen ? colors.brandRed : colors.cardBorder}`,
-                  padding: '4px 12px 4px 6px',
+                  padding: '3px 12px 3px 8px',
                   borderRadius: 10,
                   cursor: 'pointer',
                   color: colors.textPrimary,
                   transition: 'all 0.15s ease',
                   textAlign: 'left',
+                  boxShadow: colors.cardShadow,
                 }}
               >
                 <CompanyLogo
                   logoUrl={activeLogoUrl}
                   name={startup.name}
-                  size={32}
+                  size={30}
                 />
-                <div>
+                <div style={{ lineHeight: 1.15 }}>
+                  <div style={{ fontSize: 8.5, fontWeight: 800, color: colors.brandRed, letterSpacing: '0.6px', textTransform: 'uppercase' }}>
+                    Startup Spotlight
+                  </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <span style={{ fontSize: 13, fontWeight: 800, letterSpacing: '-0.2px' }}>
+                    <span style={{ fontSize: 13, fontWeight: 900, letterSpacing: '-0.2px', color: colors.textPrimary }}>
                       {startup.name}
                     </span>
                     <ChevronDown className="w-3.5 h-3.5 text-stone-400" />
                   </div>
-                  <div style={{ fontSize: 10, color: colors.accentGreen, fontWeight: 600, display: 'flex', alignItems: 'center', gap: 4 }}>
-                    <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#059669', display: 'inline-block' }} />
-                    <span>{startup.status}</span>
-                    <span style={{ color: colors.textMuted }}>• Swap Company</span>
+                  <div style={{ fontSize: 9.5, color: colors.textMuted, fontWeight: 500 }}>
+                    {activeStartupObj?.sector || 'Skincare / Beauty Tech'}
                   </div>
                 </div>
               </button>
@@ -530,21 +665,64 @@ export function CompanyTvDisplay({
                   onClick={handleNextStartup}
                   title="Next Company (→ Arrow)"
                   style={{
-                    background: colors.subtleCard,
+                    background: colors.cardBg,
                     border: `1px solid ${colors.cardBorder}`,
                     color: colors.textSecondary,
-                    width: 32,
-                    height: 32,
+                    width: 34,
+                    height: 40,
                     borderRadius: 8,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
                     cursor: 'pointer',
+                    boxShadow: colors.cardShadow,
                   }}
                 >
                   <ChevronRight className="w-4 h-4" />
                 </button>
               )}
+
+              {/* Manual Refresh */}
+              <button
+                onClick={() => fetchTelemetry()}
+                title="Force Sync Live Telemetry"
+                style={{
+                  background: colors.cardBg,
+                  border: `1px solid ${colors.cardBorder}`,
+                  color: colors.textSecondary,
+                  width: 34,
+                  height: 40,
+                  borderRadius: 8,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  boxShadow: colors.cardShadow,
+                }}
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-red-500' : ''}`} />
+              </button>
+
+              {/* Fullscreen Toggle */}
+              <button
+                onClick={toggleFullscreen}
+                title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen TV Mode (F)'}
+                style={{
+                  background: colors.cardBg,
+                  border: `1px solid ${colors.cardBorder}`,
+                  color: colors.textSecondary,
+                  width: 34,
+                  height: 40,
+                  borderRadius: 8,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  boxShadow: colors.cardShadow,
+                }}
+              >
+                {isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
+              </button>
             </div>
 
             {/* Dropdown Menu */}
@@ -553,7 +731,7 @@ export function CompanyTvDisplay({
                 style={{
                   position: 'absolute',
                   top: '100%',
-                  left: 0,
+                  right: 0,
                   marginTop: 6,
                   width: 300,
                   background: colors.cardBg,
@@ -606,53 +784,43 @@ export function CompanyTvDisplay({
                   </div>
                 )}
 
-                {/* Company Items */}
-                <div style={{ maxHeight: 260, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <div style={{ maxHeight: 220, overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: 4 }}>
                   {filteredStartups.map((s) => {
                     const isSelected = s.id === currentStartupId || s.name.toLowerCase() === startup.name.toLowerCase()
                     return (
-                      <button
+                      <div
                         key={s.id}
                         onClick={() => handleSelectStartup(s)}
                         style={{
                           display: 'flex',
                           alignItems: 'center',
                           justifyContent: 'space-between',
-                          padding: '7px 10px',
+                          padding: '6px 8px',
                           borderRadius: 8,
-                          background: isSelected ? 'rgba(202, 47, 43, 0.08)' : 'transparent',
-                          border: isSelected ? `1px solid ${colors.brandRed}` : '1px solid transparent',
+                          background: isSelected ? '#fee2e2' : 'transparent',
                           cursor: 'pointer',
-                          color: colors.textPrimary,
-                          textAlign: 'left',
-                          width: '100%',
-                          transition: 'all 0.12s ease',
+                          transition: 'background 0.15s ease',
                         }}
                       >
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                          <CompanyLogo
-                            logoUrl={s.logo_url}
-                            name={s.name}
-                            size={26}
-                          />
-                          <div style={{ minWidth: 0 }}>
-                            <div style={{ fontSize: 12.5, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <CompanyLogo logoUrl={s.logo_url} name={s.name} size={22} />
+                          <div>
+                            <div style={{ fontSize: 12, fontWeight: isSelected ? 800 : 600, color: isSelected ? colors.brandRed : colors.textPrimary }}>
                               {s.name}
                             </div>
-                            <div style={{ fontSize: 10, color: colors.textMuted }}>
-                              {s.tasksCount ? `${s.tasksCount} sprint tasks` : 'Active feed'}
+                            <div style={{ fontSize: 9.5, color: colors.textMuted }}>
+                              {s.tasksCount ? `${s.tasksCount} sprint tasks` : s.status}
                             </div>
                           </div>
                         </div>
-
-                        {isSelected && <Check className="w-4 h-4 text-red-500" style={{ color: colors.brandRed }} />}
-                      </button>
+                        {isSelected && <Check className="w-3.5 h-3.5 text-red-600" />}
+                      </div>
                     )
                   })}
                 </div>
 
-                {/* Footer link to Fleet Overview */}
-                <div style={{ borderTop: `1px solid ${colors.cardBorder}`, marginTop: 8, paddingTop: 8, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                {/* Quick Fleet Modal Launcher */}
+                <div style={{ marginTop: 8, paddingTop: 8, borderTop: `1px solid ${colors.cardBorder}`, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                   <button
                     onClick={() => {
                       setIsDropdownOpen(false)
@@ -663,6 +831,7 @@ export function CompanyTvDisplay({
                       border: 'none',
                       color: colors.textSecondary,
                       fontSize: 11,
+                      fontWeight: 600,
                       cursor: 'pointer',
                       display: 'flex',
                       alignItems: 'center',
@@ -670,9 +839,10 @@ export function CompanyTvDisplay({
                       padding: 0,
                     }}
                   >
-                    <LayoutGrid className="w-3.5 h-3.5" />
-                    <span>View All Screen URLs</span>
+                    <LayoutGrid className="w-3 h-3 text-stone-400" />
+                    <span>View All Fleet TVs</span>
                   </button>
+
                   <button
                     onClick={copyCurrentTvLink}
                     style={{
@@ -696,157 +866,6 @@ export function CompanyTvDisplay({
             )}
           </div>
         </div>
-
-        {/* Center: Live Telemetry Stream + Auto-Cycle Carousel Control */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {/* Live Radar Pulse */}
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 8,
-              padding: '5px 14px',
-              borderRadius: 100,
-              background: '#ecfdf5',
-              border: '1px solid #a7f3d0',
-              fontSize: 11,
-              fontWeight: 700,
-              letterSpacing: '0.8px',
-              color: '#059669',
-            }}
-          >
-            <span
-              style={{
-                width: 7,
-                height: 7,
-                borderRadius: '50%',
-                background: '#059669',
-                boxShadow: '0 0 10px #059669',
-                display: 'inline-block',
-              }}
-            />
-            <span>LIVE TELEMETRY STREAM</span>
-            <span style={{ opacity: 0.6, fontSize: 10, fontFamily: 'var(--font-mono)' }}>
-              ({countdown}s)
-            </span>
-          </div>
-
-          {/* Auto-Cycle / Wall TV Carousel Toggle Button */}
-          {allStartups.length > 1 && (
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-                background: isAutoCycle ? '#fee2e2' : colors.cardBg,
-                border: `1px solid ${isAutoCycle ? colors.brandRed : colors.cardBorder}`,
-                padding: '4px 10px',
-                borderRadius: 100,
-                fontSize: 11,
-                fontWeight: 700,
-                color: isAutoCycle ? colors.brandRed : colors.textSecondary,
-                cursor: 'pointer',
-                transition: 'all 0.15s ease',
-              }}
-              onClick={toggleAutoCycle}
-              title="Toggle automatic cycling between companies (Spacebar)"
-            >
-              {isAutoCycle ? (
-                <Pause className="w-3.5 h-3.5 text-red-500" />
-              ) : (
-                <Play className="w-3.5 h-3.5" />
-              )}
-              <span>Auto-Cycle: {isAutoCycle ? `${autoCycleSeconds}s` : 'OFF'}</span>
-
-              {isAutoCycle && (
-                <span
-                  style={{
-                    fontSize: 9.5,
-                    padding: '2px 6px',
-                    borderRadius: 10,
-                    background: colors.brandRed,
-                    color: '#ffffff',
-                    fontWeight: 800,
-                    marginLeft: 2,
-                  }}
-                >
-                  {currentStartupIndex + 1}/{allStartups.length}
-                </span>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Right: Wall Clock + TV Screen Utility Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-          {/* Wall Clock */}
-          <div style={{ textAlign: 'right', minWidth: 120 }}>
-            <div
-              style={{
-                fontSize: 16,
-                fontWeight: 800,
-                fontFamily: 'var(--font-mono)',
-                color: colors.textPrimary,
-                letterSpacing: '0.8px',
-                lineHeight: 1.1,
-              }}
-            >
-              {clock || '12:00:00'}
-            </div>
-            <div style={{ fontSize: 10, color: colors.textMuted, marginTop: 1 }}>
-              {clockDate}
-            </div>
-          </div>
-
-          <div style={{ height: 26, width: 1, background: colors.cardBorder }} />
-
-          {/* Action Buttons */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            {/* Manual Sync Telemetry */}
-            <button
-              onClick={() => fetchTelemetry()}
-              title="Force Sync Live Telemetry"
-              style={{
-                background: colors.subtleCard,
-                border: `1px solid ${colors.cardBorder}`,
-                color: colors.textSecondary,
-                width: 32,
-                height: 32,
-                borderRadius: 8,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-              }}
-            >
-              <RefreshCw className={`w-3.5 h-3.5 ${isRefreshing ? 'animate-spin text-red-500' : ''}`} />
-            </button>
-
-            {/* Fullscreen Toggle */}
-            <button
-              onClick={toggleFullscreen}
-              title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen TV Mode (F)'}
-              style={{
-                background: colors.brandRed,
-                border: 'none',
-                color: '#ffffff',
-                height: 32,
-                padding: '0 12px',
-                borderRadius: 8,
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                fontSize: 12,
-                fontWeight: 700,
-                boxShadow: `0 2px 8px ${colors.brandRedGlow}`,
-              }}
-            >
-              {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
-              <span>{isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}</span>
-            </button>
-          </div>
-        </div>
       </header>
 
       {/* ── 2. TV Main Telemetry Canvas ── */}
@@ -867,36 +886,39 @@ export function CompanyTvDisplay({
           transition: 'opacity 0.2s ease-in-out',
         }}
       >
-        {/* ── Sprint North Star Banner ── */}
+        {/* ── Sprint North Star Banner (Matching Reference Image) ── */}
         <div
           style={{
             background: colors.cardBg,
             border: `1px solid ${colors.cardBorder}`,
-            borderRadius: 14,
+            borderRadius: 16,
             padding: '10px 18px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'space-between',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+            boxShadow: colors.cardShadow,
             flexShrink: 0,
+            position: 'relative',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', gap: 14, flex: 1, minWidth: 0 }}>
             <div
               style={{
-                width: 36,
-                height: 36,
+                width: 38,
+                height: 38,
                 borderRadius: 10,
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 flexShrink: 0,
+                background: '#fff',
+                border: `1px solid ${colors.cardBorder}`,
               }}
             >
               <CompanyLogo
                 logoUrl={activeLogoUrl}
                 name={startup.name}
-                size={36}
+                size={34}
               />
             </div>
 
@@ -929,22 +951,26 @@ export function CompanyTvDisplay({
             </div>
           </div>
 
-          {/* Sprint Details Chips */}
+          {/* Sprint Details Chips matching reference */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
             <div
               style={{
                 padding: '4px 12px',
-                borderRadius: 8,
+                borderRadius: 100,
                 background: statusBadgeConfig.bg,
                 color: statusBadgeConfig.color,
+                border: `1px solid ${statusBadgeConfig.border}`,
                 fontSize: 11,
                 fontWeight: 800,
                 letterSpacing: '0.6px',
                 textTransform: 'uppercase',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.15)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
               }}
             >
-              {statusBadgeConfig.label}
+              <span style={{ width: 5, height: 5, borderRadius: '50%', background: statusBadgeConfig.color }} />
+              <span>{statusBadgeConfig.label}</span>
             </div>
 
             <div
@@ -954,8 +980,8 @@ export function CompanyTvDisplay({
                 background: colors.subtleCard,
                 border: `1px solid ${colors.cardBorder}`,
                 fontSize: 11.5,
-                fontWeight: 600,
-                color: colors.textSecondary,
+                fontWeight: 700,
+                color: colors.textPrimary,
               }}
             >
               {sprint.daysRemaining}d Remaining in Sprint
@@ -969,9 +995,23 @@ export function CompanyTvDisplay({
                 border: `1px solid ${colors.cardBorder}`,
                 fontSize: 11.5,
                 color: colors.textMuted,
+                fontWeight: 500,
               }}
             >
               {sprint.weekStart} → {sprint.weekEnd}
+            </div>
+
+            {/* Editorial Watermark Motto */}
+            <div
+              style={{
+                fontFamily: 'Georgia, serif',
+                fontStyle: 'italic',
+                fontSize: 12.5,
+                color: colors.brandWatermark,
+                marginLeft: 4,
+              }}
+            >
+              Building something brighter.
             </div>
           </div>
         </div>
@@ -981,9 +1021,9 @@ export function CompanyTvDisplay({
           style={{
             background: colors.cardBg,
             border: `1px solid ${colors.cardBorder}`,
-            borderRadius: 14,
+            borderRadius: 16,
             padding: '12px 18px',
-            boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+            boxShadow: colors.cardShadow,
             display: 'flex',
             flexDirection: 'column',
             gap: 10,
@@ -993,13 +1033,13 @@ export function CompanyTvDisplay({
           {/* Dashbar Header with Stages */}
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 10 }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <Activity className="w-4 h-4 text-emerald-500" />
-              <span style={{ fontSize: 11.5, fontWeight: 800, letterSpacing: '0.6px', textTransform: 'uppercase' }}>
+              <Activity className="w-4 h-4 text-red-600" />
+              <span style={{ fontSize: 12, fontWeight: 900, letterSpacing: '0.6px', textTransform: 'uppercase', color: colors.textPrimary }}>
                 Sprint Process & Execution Pipeline
               </span>
             </div>
 
-            {/* Pipeline Stage Indicators */}
+            {/* Pipeline Stage Indicators matching reference */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
               {/* Stage 1: Backlog / Todo */}
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 11.5 }}>
@@ -1008,7 +1048,7 @@ export function CompanyTvDisplay({
                     width: 8,
                     height: 8,
                     borderRadius: '50%',
-                    background: '#a1a1aa',
+                    background: '#a8a29e',
                   }}
                 />
                 <span style={{ color: colors.textMuted }}>Backlog (TODO):</span>
@@ -1024,12 +1064,11 @@ export function CompanyTvDisplay({
                     width: 8,
                     height: 8,
                     borderRadius: '50%',
-                    background: '#0284c7',
-                    boxShadow: '0 0 8px #0284c7',
+                    background: '#f97316',
                   }}
                 />
-                <span style={{ color: colors.accentBlue, fontWeight: 600 }}>Active Execution:</span>
-                <span style={{ fontWeight: 800, color: '#0284c7' }}>
+                <span style={{ color: '#ea580c', fontWeight: 600 }}>Active Execution:</span>
+                <span style={{ fontWeight: 800, color: '#ea580c' }}>
                   {metrics.inProgressTasks} ({inProgressPercent}%)
                 </span>
               </div>
@@ -1041,12 +1080,11 @@ export function CompanyTvDisplay({
                     width: 8,
                     height: 8,
                     borderRadius: '50%',
-                    background: '#059669',
-                    boxShadow: '0 0 8px #059669',
+                    background: colors.brandRed,
                   }}
                 />
-                <span style={{ color: '#059669', fontWeight: 600 }}>Delivered:</span>
-                <span style={{ fontWeight: 800, color: '#059669' }}>
+                <span style={{ color: colors.brandRed, fontWeight: 700 }}>Delivered:</span>
+                <span style={{ fontWeight: 800, color: colors.brandRed }}>
                   {metrics.doneTasks} ({donePercent}%)
                 </span>
               </div>
@@ -1054,7 +1092,7 @@ export function CompanyTvDisplay({
               {/* Pace Target Comparison */}
               <div
                 style={{
-                  padding: '3px 8px',
+                  padding: '3px 10px',
                   borderRadius: 6,
                   background: colors.subtleCard,
                   border: `1px solid ${colors.cardBorder}`,
@@ -1063,56 +1101,56 @@ export function CompanyTvDisplay({
                   fontWeight: 600,
                 }}
               >
-                Target Pace: <span style={{ color: colors.textPrimary, fontWeight: 800 }}>{sprintTargetPace}%</span>
+                Target Pace: <span style={{ color: colors.brandRed, fontWeight: 900 }}>{sprintTargetPace}%</span>
               </div>
             </div>
           </div>
 
-          {/* Continuous Multi-Segment Process Bar */}
+          {/* Continuous Multi-Segment Process Bar in warm studio tones */}
           <div
             style={{
               height: 12,
               borderRadius: 6,
-              background: '#ede7cf',
+              background: '#f4ede0',
               display: 'flex',
               overflow: 'hidden',
-              boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.08)',
+              boxShadow: 'inset 0 1px 3px rgba(0, 0, 0, 0.06)',
               position: 'relative',
             }}
           >
-            {/* Done Segment */}
+            {/* Done Segment (Crimson Brand Red) */}
             {donePercent > 0 && (
               <div
                 style={{
                   width: `${donePercent}%`,
                   height: '100%',
-                  background: 'linear-gradient(90deg, #059669 0%, #10b981 100%)',
+                  background: 'linear-gradient(90deg, #ca2f2b 0%, #991b1b 100%)',
                   transition: 'width 0.4s ease',
                 }}
                 title={`Delivered: ${donePercent}%`}
               />
             )}
 
-            {/* In Progress Segment */}
+            {/* In Progress Segment (Vibrant Coral Orange) */}
             {inProgressPercent > 0 && (
               <div
                 style={{
                   width: `${inProgressPercent}%`,
                   height: '100%',
-                  background: 'linear-gradient(90deg, #0284c7 0%, #38bdf8 100%)',
+                  background: 'linear-gradient(90deg, #f97316 0%, #ea580c 100%)',
                   transition: 'width 0.4s ease',
                 }}
                 title={`Active: ${inProgressPercent}%`}
               />
             )}
 
-            {/* Todo / Backlog Segment */}
+            {/* Todo / Backlog Segment (Warm Taupe) */}
             {todoPercent > 0 && (
               <div
                 style={{
                   width: `${todoPercent}%`,
                   height: '100%',
-                  background: '#d5ceb3',
+                  background: '#e5decb',
                   transition: 'width 0.4s ease',
                 }}
                 title={`Backlog: ${todoPercent}%`}
@@ -1123,7 +1161,7 @@ export function CompanyTvDisplay({
           {/* Functional Domain Readiness Footnote */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: 10.5, color: colors.textMuted }}>
             <div>
-              <span style={{ fontWeight: 700, color: colors.textSecondary }}>FUNCTIONAL READINESS: </span>
+              <span style={{ fontWeight: 800, color: colors.textPrimary }}>FUNCTIONAL READINESS: </span>
               {charts.domains.length > 0 ? (
                 charts.domains.map((dom, i) => (
                   <span key={dom.name}>
@@ -1146,24 +1184,24 @@ export function CompanyTvDisplay({
             flexShrink: 0,
           }}
         >
-          {/* Tile 1: Sprint Completion Percentage */}
+          {/* Tile 1: Sprint Completion Percentage with Circular Gauge */}
           <div
             style={{
               background: colors.cardBg,
               border: `1px solid ${colors.cardBorder}`,
-              borderRadius: 14,
+              borderRadius: 16,
               padding: '12px 16px',
-              boxShadow: '0 2px 6px rgba(0, 0, 0, 0.03)',
+              boxShadow: colors.cardShadow,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',
             }}
           >
             <div>
-              <div style={{ fontSize: 10, fontWeight: 700, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+              <div style={{ fontSize: 10, fontWeight: 800, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
                 Sprint Completion
               </div>
-              <div style={{ fontSize: 30, fontWeight: 900, letterSpacing: '-1px', color: colors.brandRed, lineHeight: 1.1, marginTop: 3 }}>
+              <div style={{ fontSize: 32, fontWeight: 900, letterSpacing: '-1px', color: colors.brandRed, lineHeight: 1.1, marginTop: 3 }}>
                 {metrics.completionRate}%
               </div>
               <div style={{ fontSize: 10.5, color: colors.textSecondary, marginTop: 3 }}>
@@ -1171,13 +1209,13 @@ export function CompanyTvDisplay({
               </div>
             </div>
 
-            {/* Circular Progress Ring */}
+            {/* Circular Progress Ring in brand red */}
             <div style={{ position: 'relative', width: 44, height: 44, flexShrink: 0 }}>
               <svg width="44" height="44" viewBox="0 0 36 36">
                 <path
                   d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                   fill="none"
-                  stroke="#ede7cf"
+                  stroke="#fee2e2"
                   strokeWidth="3.8"
                 />
                 <path
@@ -1196,8 +1234,8 @@ export function CompanyTvDisplay({
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontSize: 9.5,
-                  fontWeight: 800,
-                  color: colors.textPrimary,
+                  fontWeight: 900,
+                  color: colors.brandRed,
                 }}
               >
                 {metrics.completionRate}%
@@ -1210,18 +1248,18 @@ export function CompanyTvDisplay({
             style={{
               background: colors.cardBg,
               border: `1px solid ${colors.cardBorder}`,
-              borderRadius: 14,
+              borderRadius: 16,
               padding: '12px 16px',
-              boxShadow: '0 2px 6px rgba(0, 0, 0, 0.03)',
+              boxShadow: colors.cardShadow,
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+              <div style={{ fontSize: 10, fontWeight: 800, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
                 Active Execution
               </div>
-              <Clock className="w-4 h-4 text-sky-500" />
+              <Clock className="w-4 h-4 text-red-600" />
             </div>
-            <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: '-1px', color: '#0284c7', lineHeight: 1.1, marginTop: 3 }}>
+            <div style={{ fontSize: 32, fontWeight: 900, letterSpacing: '-1px', color: colors.brandRed, lineHeight: 1.1, marginTop: 3 }}>
               {metrics.inProgressTasks}
             </div>
             <div style={{ fontSize: 10.5, color: colors.textSecondary, marginTop: 3 }}>
@@ -1234,18 +1272,18 @@ export function CompanyTvDisplay({
             style={{
               background: colors.cardBg,
               border: `1px solid ${colors.cardBorder}`,
-              borderRadius: 14,
+              borderRadius: 16,
               padding: '12px 16px',
-              boxShadow: '0 2px 6px rgba(0, 0, 0, 0.03)',
+              boxShadow: colors.cardShadow,
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+              <div style={{ fontSize: 10, fontWeight: 800, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
                 Early Deliveries
               </div>
-              <Zap className="w-4 h-4 text-emerald-500" />
+              <Zap className="w-4 h-4 text-emerald-600" />
             </div>
-            <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: '-1px', color: '#059669', lineHeight: 1.1, marginTop: 3 }}>
+            <div style={{ fontSize: 32, fontWeight: 900, letterSpacing: '-1px', color: '#15803d', lineHeight: 1.1, marginTop: 3 }}>
               {metrics.earlyCount}
             </div>
             <div style={{ fontSize: 10.5, color: colors.textSecondary, marginTop: 3 }}>
@@ -1258,18 +1296,18 @@ export function CompanyTvDisplay({
             style={{
               background: colors.cardBg,
               border: `1px solid ${colors.cardBorder}`,
-              borderRadius: 14,
+              borderRadius: 16,
               padding: '12px 16px',
-              boxShadow: '0 2px 6px rgba(0, 0, 0, 0.03)',
+              boxShadow: colors.cardShadow,
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+              <div style={{ fontSize: 10, fontWeight: 800, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
                 Domain Pillars
               </div>
-              <Layers className="w-4 h-4 text-purple-500" />
+              <Layers className="w-4 h-4 text-purple-600" />
             </div>
-            <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: '-1px', color: '#7c3aed', lineHeight: 1.1, marginTop: 3 }}>
+            <div style={{ fontSize: 32, fontWeight: 900, letterSpacing: '-1px', color: colors.textPrimary, lineHeight: 1.1, marginTop: 3 }}>
               {metrics.domainsCount}
             </div>
             <div style={{ fontSize: 10.5, color: colors.textSecondary, marginTop: 3 }}>
@@ -1282,18 +1320,18 @@ export function CompanyTvDisplay({
             style={{
               background: colors.cardBg,
               border: `1px solid ${colors.cardBorder}`,
-              borderRadius: 14,
+              borderRadius: 16,
               padding: '12px 16px',
-              boxShadow: '0 2px 6px rgba(0, 0, 0, 0.03)',
+              boxShadow: colors.cardShadow,
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <div style={{ fontSize: 10, fontWeight: 700, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+              <div style={{ fontSize: 10, fontWeight: 800, color: colors.textMuted, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
                 Startup Staff
               </div>
-              <Users2 className="w-4 h-4 text-amber-500" />
+              <Users2 className="w-4 h-4 text-amber-600" />
             </div>
-            <div style={{ fontSize: 30, fontWeight: 800, letterSpacing: '-1px', color: '#d97706', lineHeight: 1.1, marginTop: 3 }}>
+            <div style={{ fontSize: 32, fontWeight: 900, letterSpacing: '-1px', color: colors.textPrimary, lineHeight: 1.1, marginTop: 3 }}>
               {metrics.operatorsCount}
             </div>
             <div style={{ fontSize: 10.5, color: colors.textSecondary, marginTop: 3 }}>
@@ -1317,18 +1355,18 @@ export function CompanyTvDisplay({
             style={{
               background: colors.cardBg,
               border: `1px solid ${colors.cardBorder}`,
-              borderRadius: 14,
+              borderRadius: 16,
               padding: '14px 18px',
               display: 'flex',
               flexDirection: 'column',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+              boxShadow: colors.cardShadow,
               minHeight: 0,
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <TrendingUp className="w-4 h-4 text-red-500" />
-                <h3 style={{ fontSize: 13, fontWeight: 800, letterSpacing: '-0.2px' }}>
+                <TrendingUp className="w-4 h-4 text-red-600" />
+                <h3 style={{ fontSize: 13, fontWeight: 900, letterSpacing: '-0.2px', color: colors.textPrimary }}>
                   Weekly Burndown & Execution Trajectory
                 </h3>
               </div>
@@ -1339,7 +1377,7 @@ export function CompanyTvDisplay({
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
                   <span style={{ width: 10, height: 3, background: colors.brandRed, borderRadius: 2 }} />
-                  <span style={{ color: colors.brandRed, fontWeight: 700 }}>Actual Work</span>
+                  <span style={{ color: colors.brandRed, fontWeight: 800 }}>Actual Work</span>
                 </div>
               </div>
             </div>
@@ -1350,7 +1388,7 @@ export function CompanyTvDisplay({
                   <defs>
                     <linearGradient id="tvRedGradient" x1="0" y1="0" x2="0" y2="1">
                       <stop offset="5%" stopColor={colors.brandRed} stopOpacity={0.25} />
-                      <stop offset="95%" stopColor={colors.brandRed} stopOpacity={0} />
+                      <stop offset="95%" stopColor={colors.brandRed} stopOpacity={0.01} />
                     </linearGradient>
                   </defs>
                   <CartesianGrid strokeDasharray="3 3" stroke={colors.gridLine} />
@@ -1371,7 +1409,7 @@ export function CompanyTvDisplay({
                     dataKey="ideal"
                     name="Target Remaining"
                     stroke={colors.chartIdeal}
-                    strokeWidth={1.5}
+                    strokeWidth={1.8}
                     strokeDasharray="4 4"
                     fill="transparent"
                   />
@@ -1392,23 +1430,23 @@ export function CompanyTvDisplay({
             </div>
           </div>
 
-          {/* Chart 2: Domain Throughput Bar Chart */}
+          {/* Chart 2: Domain Throughput Bar Chart in Brand Crimson & Coral */}
           <div
             style={{
               background: colors.cardBg,
               border: `1px solid ${colors.cardBorder}`,
-              borderRadius: 14,
+              borderRadius: 16,
               padding: '14px 18px',
               display: 'flex',
               flexDirection: 'column',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+              boxShadow: colors.cardShadow,
               minHeight: 0,
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Layers className="w-4 h-4 text-purple-500" />
-                <h3 style={{ fontSize: 13, fontWeight: 800, letterSpacing: '-0.2px' }}>
+                <Layers className="w-4 h-4 text-red-600" />
+                <h3 style={{ fontSize: 13, fontWeight: 900, letterSpacing: '-0.2px', color: colors.textPrimary }}>
                   Domain Throughput
                 </h3>
               </div>
@@ -1437,9 +1475,9 @@ export function CompanyTvDisplay({
                       }}
                     />
                     <Legend wrapperStyle={{ fontSize: 10.5, color: colors.textMuted }} />
-                    <Bar isAnimationActive={false} dataKey="done" name="Completed" fill="#059669" radius={[4, 4, 0, 0]} />
-                    <Bar isAnimationActive={false} dataKey="inProgress" name="Active" fill="#0284c7" radius={[4, 4, 0, 0]} />
-                    <Bar isAnimationActive={false} dataKey="todo" name="Backlog" fill="#d5ceb3" radius={[4, 4, 0, 0]} />
+                    <Bar isAnimationActive={false} dataKey="done" name="Completed" fill={colors.brandRed} radius={[4, 4, 0, 0]} />
+                    <Bar isAnimationActive={false} dataKey="inProgress" name="Active" fill={colors.brandRedSoft} radius={[4, 4, 0, 0]} />
+                    <Bar isAnimationActive={false} dataKey="todo" name="Backlog" fill="#ded4be" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               )}
@@ -1458,23 +1496,24 @@ export function CompanyTvDisplay({
             flexShrink: 0,
           }}
         >
-          {/* Active Deliverables Radar */}
+          {/* Active Deliverables Radar with Numbered Badges & Editorial Watermark */}
           <div
             style={{
               background: colors.cardBg,
               border: `1px solid ${colors.cardBorder}`,
-              borderRadius: 14,
+              borderRadius: 16,
               padding: '12px 18px',
               display: 'flex',
               flexDirection: 'column',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+              boxShadow: colors.cardShadow,
               minHeight: 0,
+              position: 'relative',
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Activity className="w-4 h-4 text-emerald-500" />
-                <h3 style={{ fontSize: 12.5, fontWeight: 800 }}>Sprint Deliverables Radar</h3>
+                <Activity className="w-4 h-4 text-red-600" />
+                <h3 style={{ fontSize: 12.5, fontWeight: 900, color: colors.textPrimary }}>Sprint Deliverables Radar</h3>
               </div>
               <span style={{ fontSize: 10.5, color: colors.textMuted }}>Active Sprint Backlog</span>
             </div>
@@ -1494,7 +1533,7 @@ export function CompanyTvDisplay({
                   minHeight: 0,
                 }}
               >
-                {deliverables.map((task) => (
+                {deliverables.map((task, idx) => (
                   <div
                     key={task.id}
                     style={{
@@ -1508,6 +1547,25 @@ export function CompanyTvDisplay({
                       gap: 8,
                     }}
                   >
+                    {/* Red Numbered Circle like Top Wins in reference */}
+                    <div
+                      style={{
+                        width: 18,
+                        height: 18,
+                        borderRadius: '50%',
+                        background: colors.brandRed,
+                        color: '#ffffff',
+                        fontSize: 10,
+                        fontWeight: 900,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                      }}
+                    >
+                      {idx + 1}
+                    </div>
+
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div
                         style={{
@@ -1522,7 +1580,7 @@ export function CompanyTvDisplay({
                         {task.title}
                       </div>
                       <div style={{ fontSize: 9.5, color: colors.textMuted, marginTop: 1, display: 'flex', gap: 6 }}>
-                        <span style={{ color: colors.brandRed, fontWeight: 600 }}>{task.domainName}</span>
+                        <span style={{ color: colors.brandRed, fontWeight: 700 }}>{task.domainName}</span>
                         <span>•</span>
                         <span>{task.assigneeName}</span>
                       </div>
@@ -1533,20 +1591,27 @@ export function CompanyTvDisplay({
                         padding: '2px 6px',
                         borderRadius: 5,
                         fontSize: 9,
-                        fontWeight: 700,
+                        fontWeight: 800,
                         textTransform: 'uppercase',
                         background:
                           task.status === 'DONE'
-                            ? '#ecfdf5'
+                            ? colors.accentGreenBg
                             : task.status === 'IN_PROGRESS'
-                            ? '#f0f9ff'
-                            : '#f4efd5',
+                            ? colors.brandRedFaint
+                            : '#fdfbf7',
                         color:
                           task.status === 'DONE'
-                            ? '#065f46'
+                            ? colors.accentGreen
                             : task.status === 'IN_PROGRESS'
-                            ? '#0369a1'
-                            : colors.textSecondary,
+                            ? colors.brandRed
+                            : colors.textMuted,
+                        border: `1px solid ${
+                          task.status === 'DONE'
+                            ? colors.accentGreenBorder
+                            : task.status === 'IN_PROGRESS'
+                            ? colors.brandRedBorder
+                            : colors.cardBorder
+                        }`,
                         flexShrink: 0,
                       }}
                     >
@@ -1556,25 +1621,42 @@ export function CompanyTvDisplay({
                 ))}
               </div>
             )}
+
+            {/* Script Watermark in Bottom Right corner */}
+            <div
+              style={{
+                position: 'absolute',
+                bottom: 8,
+                right: 14,
+                fontFamily: 'Georgia, serif',
+                fontStyle: 'italic',
+                fontSize: 12.5,
+                color: colors.brandWatermark,
+                pointerEvents: 'none',
+              }}
+            >
+              Small Steps Brighter Days
+            </div>
           </div>
 
-          {/* Delivery Quality Mix */}
+          {/* Delivery Quality Mix with Script Watermark */}
           <div
             style={{
               background: colors.cardBg,
               border: `1px solid ${colors.cardBorder}`,
-              borderRadius: 14,
+              borderRadius: 16,
               padding: '12px 18px',
               display: 'flex',
               flexDirection: 'column',
-              boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
+              boxShadow: colors.cardShadow,
               minHeight: 0,
+              position: 'relative',
             }}
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <Target className="w-4 h-4 text-sky-500" />
-                <h3 style={{ fontSize: 12.5, fontWeight: 800 }}>Delivery Quality Mix</h3>
+                <Target className="w-4 h-4 text-red-600" />
+                <h3 style={{ fontSize: 12.5, fontWeight: 900, color: colors.textPrimary }}>Delivery Quality Mix</h3>
               </div>
               <span style={{ fontSize: 10, color: colors.textMuted }}>Accuracy & Pacing</span>
             </div>
@@ -1594,9 +1676,10 @@ export function CompanyTvDisplay({
                       paddingAngle={3}
                       dataKey="value"
                     >
-                      {charts.quality.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
+                      {charts.quality.map((entry, index) => {
+                        const pieColors = [colors.brandRed, colors.brandRedSoft, '#ded4be']
+                        return <Cell key={`cell-${index}`} fill={pieColors[index % pieColors.length]} />
+                      })}
                     </Pie>
                   </PieChart>
                 </ResponsiveContainer>
@@ -1604,72 +1687,106 @@ export function CompanyTvDisplay({
 
               {/* Quality Legend */}
               <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                {charts.quality.map((item) => (
-                  <div key={item.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 11 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                      <span style={{ width: 8, height: 8, borderRadius: '50%', background: item.color }} />
-                      <span style={{ color: colors.textSecondary }}>{item.name}</span>
+                {charts.quality.map((item, idx) => {
+                  const pieColors = [colors.brandRed, colors.brandRedSoft, '#ded4be']
+                  const itemColor = pieColors[idx % pieColors.length]
+                  return (
+                    <div key={item.name} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 11 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ width: 8, height: 8, borderRadius: '50%', background: itemColor }} />
+                        <span style={{ color: colors.textSecondary }}>{item.name}</span>
+                      </div>
+                      <span style={{ fontWeight: 800, color: colors.textPrimary }}>{item.value} tasks</span>
                     </div>
-                    <span style={{ fontWeight: 700, color: colors.textPrimary }}>{item.value} tasks</span>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
+            </div>
+
+            {/* Script Watermark in Bottom Right corner */}
+            <div
+              style={{
+                position: 'absolute',
+                bottom: 8,
+                right: 14,
+                fontFamily: 'Georgia, serif',
+                fontStyle: 'italic',
+                fontSize: 12.5,
+                color: colors.brandWatermark,
+                pointerEvents: 'none',
+              }}
+            >
+              Solve Scale Shine
             </div>
           </div>
         </div>
 
-        {/* ── 7. Bottom News & Milestones Ticker ── */}
-        <div
+        {/* ── 7. Bottom Studio System Bar (Matching Reference Design) ── */}
+        <footer
           style={{
-            background: '#ede7d3',
-            borderRadius: 9,
-            padding: '6px 16px',
+            background: colors.bg,
+            borderTop: `1px solid ${colors.cardBorder}`,
+            padding: '6px 20px',
             display: 'flex',
             alignItems: 'center',
-            gap: 12,
+            justifyContent: 'space-between',
             fontSize: 11,
-            color: colors.textSecondary,
             flexShrink: 0,
-            overflow: 'hidden',
           }}
         >
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 6,
-              color: colors.brandRed,
-              fontWeight: 800,
-              fontSize: 10,
-              letterSpacing: '0.6px',
-              textTransform: 'uppercase',
-              flexShrink: 0,
-            }}
-          >
-            <Flame className="w-3.5 h-3.5" />
-            <span>STUDIO DISPATCH</span>
+          {/* Left: Studio Operating System Identity */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ color: colors.brandRed, fontWeight: 900, letterSpacing: '0.12em' }}>
+              DAYONE
+            </span>
+            <span style={{ color: '#d4cbb8' }}>|</span>
+            <span style={{ color: '#3f3f46', fontWeight: 800, letterSpacing: '0.1em' }}>
+              5 STARTUPS
+            </span>
+            <span style={{ color: '#d4cbb8' }}>|</span>
+            <span style={{ color: '#3f3f46', fontWeight: 800, letterSpacing: '0.1em' }}>
+              ONE OPERATING SYSTEM
+            </span>
           </div>
 
-          <div style={{ height: 14, width: 1, background: colors.cardBorder, flexShrink: 0 }} />
-
-          <div style={{ overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', flex: 1 }}>
-            {recentActivity.length > 0 ? (
-              <span>
-                Recent: {recentActivity[0].action.replace(/_/g, ' ')} • Recorded on Day One Platform
-              </span>
-            ) : (
-              <span>
-                Live sprint cadence monitoring active for {startup.name} • All domain operations connected
-              </span>
-            )}
+          {/* Center: Live Studio Dispatch Ticker & Star */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10, maxWidth: '46%' }}>
+            <span style={{ color: colors.brandRed, fontSize: 14 }}>✦</span>
+            <div
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 5,
+                color: colors.brandRed,
+                fontWeight: 800,
+                fontSize: 10,
+                letterSpacing: '0.6px',
+                textTransform: 'uppercase',
+                flexShrink: 0,
+              }}
+            >
+              <Flame className="w-3.5 h-3.5" />
+              <span>DISPATCH:</span>
+            </div>
+            <div style={{ overflow: 'hidden', whiteSpace: 'nowrap', textOverflow: 'ellipsis', color: colors.textSecondary, fontSize: 11 }}>
+              {recentActivity.length > 0 ? (
+                <span>Recent: {recentActivity[0].action.replace(/_/g, ' ')} • Recorded on Day One Platform</span>
+              ) : (
+                <span>Live sprint telemetry active for {startup.name} • All domain operations connected</span>
+              )}
+            </div>
           </div>
 
-          <div style={{ fontSize: 10, color: colors.textMuted, flexShrink: 0 }}>
-            {isAutoCycle
-              ? `Auto-Cycle Active (${Math.round((autoCycleProgress / 100) * autoCycleSeconds)}s / ${autoCycleSeconds}s)`
-              : 'Sync interval: 20s'}
+          {/* Right: Studio Motto & Telemetry Status */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <span style={{ color: '#52525b', fontWeight: 800, letterSpacing: '0.12em', fontSize: 10.5, textTransform: 'uppercase' }}>
+              PEOPLE × BRANDS × BIGGER POSSIBILITIES
+            </span>
+            <span style={{ fontSize: 10, color: colors.textMuted }}>
+              {isAutoCycle ? `Auto-Cycle (${Math.round((autoCycleProgress / 100) * autoCycleSeconds)}s)` : 'Sync: 20s'}
+            </span>
           </div>
-        </div>
+        </footer>
       </main>
 
       {/* ── Fleet Modal (When user wants all screen URLs) ── */}
