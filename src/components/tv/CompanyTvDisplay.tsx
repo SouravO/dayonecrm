@@ -18,7 +18,6 @@ import {
   ListOrdered,
   CheckCircle2,
   Target,
-  Compass,
   BarChart3,
   Hourglass,
   TrendingUp,
@@ -34,10 +33,7 @@ import {
   ChevronLeft,
   ChevronRight,
   ChevronDown,
-  Users2,
   Search,
-  Activity,
-  ShieldCheck,
 } from 'lucide-react'
 import { CompanyLogo } from '@/components/brand/CompanyLogo'
 import type { TvPayload } from '@/lib/tv/telemetry'
@@ -59,7 +55,6 @@ export interface StartupOption {
 interface Props {
   initialData: TvPayload
   startupId: string
-  initialTheme?: 'dark' | 'cream'
   allStartups?: StartupOption[]
 }
 
@@ -90,7 +85,7 @@ export function CompanyTvDisplay({
     }
   }, [initialData])
 
-  // Clear legacy dark mode preference
+  // Clear legacy dark mode preference and restore auto-cycle preference
   useEffect(() => {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('dayone_tv_theme')
@@ -114,7 +109,7 @@ export function CompanyTvDisplay({
     return () => document.removeEventListener('mousedown', handleOutsideClick)
   }, [isDropdownOpen])
 
-  // WakeLock: Keep TV screen on without sleeping
+  // WakeLock: Keep TV screen awake
   useEffect(() => {
     let wakeLock: any = null
     const requestWakeLock = async () => {
@@ -179,236 +174,342 @@ export function CompanyTvDisplay({
     handleSelectStartup(allStartups[nextIdx])
   }, [allStartups, currentStartupIndex, handleSelectStartup])
 
-  // Auto-Cycle Ticker (Cycles through companies automatically)
+  // Auto-Cycle Timer
   useEffect(() => {
-    if (!isAutoCycle || allStartups.length <= 1 || isDropdownOpen) {
+    if (!isAutoCycle || allStartups.length <= 1) {
+      setAutoCycleProgress(0)
       return
     }
 
-    const stepMs = 250
-    const totalMs = autoCycleSeconds * 1000
-    const increment = (stepMs / totalMs) * 100
+    const intervalMs = 100
+    const step = 100 / (autoCycleSeconds * (1000 / intervalMs))
 
-    const cycleInterval = setInterval(() => {
+    const timer = setInterval(() => {
       setAutoCycleProgress((prev) => {
         if (prev >= 100) {
           handleNextStartup()
           return 0
         }
-        return prev + increment
+        return prev + step
       })
-    }, stepMs)
+    }, intervalMs)
 
-    return () => clearInterval(cycleInterval)
-  }, [isAutoCycle, allStartups.length, autoCycleSeconds, isDropdownOpen, handleNextStartup])
-
-  // Keyboard navigation
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.target as HTMLElement)?.tagName === 'INPUT') return
-
-      if (e.key.toLowerCase() === 'f') {
-        toggleFullscreen()
-      } else if (e.key === 'ArrowRight') {
-        handleNextStartup()
-      } else if (e.key === 'ArrowLeft') {
-        handlePrevStartup()
-      } else if (e.key === ' ') {
-        e.preventDefault()
-        toggleAutoCycle()
-      } else if (e.key === 'Escape') {
-        setIsDropdownOpen(false)
-      }
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [handleNextStartup, handlePrevStartup, isAutoCycle])
-
-  const toggleFullscreen = () => {
-    if (!document.fullscreenElement) {
-      document.documentElement.requestFullscreen().then(() => setIsFullscreen(true)).catch(() => {})
-    } else {
-      document.exitFullscreen().then(() => setIsFullscreen(false)).catch(() => {})
-    }
-  }
+    return () => clearInterval(timer)
+  }, [isAutoCycle, autoCycleSeconds, allStartups.length, handleNextStartup])
 
   const toggleAutoCycle = () => {
     const next = !isAutoCycle
     setIsAutoCycle(next)
     setAutoCycleProgress(0)
-    localStorage.setItem('dayone_tv_autocycle', next ? 'true' : 'false')
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('dayone_tv_autocycle', String(next))
+    }
   }
 
-  // Filter startups for dropdown
+  // Fullscreen Toggle
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {})
+      setIsFullscreen(true)
+    } else {
+      document.exitFullscreen().catch(() => {})
+      setIsFullscreen(false)
+    }
+  }
+
+  // Keyboard Shortcuts (Arrow keys to navigate, 'F' for fullscreen, Space for cycle)
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return
+      }
+      if (e.key === 'ArrowRight') {
+        e.preventDefault()
+        handleNextStartup()
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault()
+        handlePrevStartup()
+      } else if (e.key.toLowerCase() === 'f') {
+        e.preventDefault()
+        toggleFullscreen()
+      } else if (e.key === ' ') {
+        e.preventDefault()
+        toggleAutoCycle()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [handleNextStartup, handlePrevStartup])
+
   const filteredStartups = allStartups.filter((s) =>
-    s.name.toLowerCase().includes(companySearch.toLowerCase())
+    s.name.toLowerCase().includes(companySearch.toLowerCase()) ||
+    (s.sector && s.sector.toLowerCase().includes(companySearch.toLowerCase()))
   )
 
+  // Card base styles matching the reference design
   const cardStyle: React.CSSProperties = {
     background: '#ffffff',
-    border: '1px solid #e7e0cd',
-    borderRadius: 12,
-    padding: '9px 12px',
+    borderRadius: 14,
+    border: '1px solid rgba(224, 215, 200, 0.7)',
+    boxShadow: '0 4px 16px -2px rgba(160, 130, 110, 0.08), 0 2px 6px -1px rgba(0, 0, 0, 0.03)',
+    padding: '10px 14px',
     display: 'flex',
     flexDirection: 'column',
     justifyContent: 'space-between',
+    minHeight: 0,
     position: 'relative',
     overflow: 'hidden',
-    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.02)',
-    boxSizing: 'border-box',
   }
-
-  // Extract domain data or provide realistic domain readiness fallback
-  const domainReadiness =
-    data.charts?.domains && data.charts.domains.length > 0
-      ? data.charts.domains.map((d) => ({
-          name: d.name,
-          total: d.total > 0 ? d.total : 4,
-          done: d.total > 0 ? d.done : Math.round(d.rate > 0 ? (d.rate / 100) * 4 : 3),
-          rate: d.rate > 0 ? d.rate : 75,
-        }))
-      : [
-          { name: 'Product & Formulation', done: 4, total: 4, rate: 100 },
-          { name: 'Growth Marketing', done: 3, total: 4, rate: 75 },
-          { name: 'Packaging & Supply', done: 2, total: 3, rate: 67 },
-          { name: 'Retail & Distribution', done: 3, total: 3, rate: 100 },
-          { name: 'Finance & Compliance', done: 2, total: 2, rate: 100 },
-        ]
 
   return (
     <div
       style={{
+        width: '100vw',
         height: '100vh',
         maxHeight: '100vh',
         overflow: 'hidden',
-        background: '#f6f2db',
+        background: 'radial-gradient(ellipse at 50% 30%, #fffdf9 0%, #f9f2e7 60%, #efe4d3 100%)',
         color: '#1e1b18',
+        fontFamily: "'Plus Jakarta Sans', var(--font-sans), sans-serif",
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-        padding: '8px 16px 6px',
+        padding: '12px 18px 8px 18px',
         boxSizing: 'border-box',
-        fontFamily: 'var(--font-sans, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif)',
+        position: 'relative',
+        userSelect: 'none',
       }}
     >
-      {/* Auto-Cycle Progress Indicator Line */}
-      {isAutoCycle && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            height: 3,
-            zIndex: 100,
-            background: 'rgba(0, 0, 0, 0.06)',
-          }}
-        >
-          <div
-            style={{
-              height: '100%',
-              width: `${autoCycleProgress}%`,
-              background: 'linear-gradient(90deg, #ca2f2b 0%, #f59e0b 50%, #10b981 100%)',
-              transition: 'width 250ms linear',
-            }}
-          />
-        </div>
-      )}
+      {/* ── AMBIENT 3D LIQUID ACCENTS (MATCHING REFERENCE LUXURY AESTHETIC) ── */}
+      {/* Top Left Subtle Liquid Curve */}
+      <svg
+        width="260"
+        height="180"
+        viewBox="0 0 260 180"
+        fill="none"
+        style={{
+          position: 'absolute',
+          top: -20,
+          left: -20,
+          pointerEvents: 'none',
+          zIndex: 0,
+          opacity: 0.45,
+        }}
+      >
+        <path
+          d="M-20 0 C40 40 80 120 240 70 C160 160 40 180 -20 120 Z"
+          fill="url(#ambientRedGrad1)"
+        />
+        <defs>
+          <linearGradient id="ambientRedGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#ca2f2b" stopOpacity="0.4" />
+            <stop offset="100%" stopColor="#fca5a5" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+      </svg>
 
-      {/* ── TOP HEADER BAR ── */}
+      {/* Bottom Right Glowing Glass Orb & Liquid Swirl */}
+      <svg
+        width="280"
+        height="220"
+        viewBox="0 0 280 220"
+        fill="none"
+        style={{
+          position: 'absolute',
+          bottom: -30,
+          right: -20,
+          pointerEvents: 'none',
+          zIndex: 0,
+          opacity: 0.55,
+        }}
+      >
+        {/* Curving liquid ribbon */}
+        <path
+          d="M40 220 C90 140 180 130 280 170 C240 220 160 230 40 220 Z"
+          fill="url(#ambientRedGrad2)"
+        />
+        {/* Glowing glass orb sphere */}
+        <circle cx="210" cy="150" r="42" fill="url(#orbGrad)" />
+        <circle cx="195" cy="135" r="14" fill="#ffffff" fillOpacity="0.55" />
+        <defs>
+          <radialGradient id="orbGrad" cx="35%" cy="35%" r="65%">
+            <stop offset="0%" stopColor="#fecaca" stopOpacity="0.9" />
+            <stop offset="45%" stopColor="#ca2f2b" stopOpacity="0.7" />
+            <stop offset="100%" stopColor="#781014" stopOpacity="0.85" />
+          </radialGradient>
+          <linearGradient id="ambientRedGrad2" x1="0%" y1="100%" x2="100%" y2="0%">
+            <stop offset="0%" stopColor="#ca2f2b" stopOpacity="0.6" />
+            <stop offset="100%" stopColor="#fecaca" stopOpacity="0.1" />
+          </linearGradient>
+        </defs>
+      </svg>
+
+      {/* ── HEADER ── */}
       <header
         style={{
+          height: 52,
+          flexShrink: 0,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          height: 54,
-          flexShrink: 0,
-          borderBottom: '1px solid rgba(202, 47, 43, 0.12)',
-          paddingBottom: 4,
+          zIndex: 10,
+          position: 'relative',
         }}
       >
-        {/* Left: Dayone Logo */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          <Link href="/" style={{ textDecoration: 'none', display: 'flex', flexDirection: 'column' }}>
-            <span style={{ fontSize: 27, fontWeight: 900, color: '#ca2f2b', letterSpacing: '-1.2px', lineHeight: 0.9 }}>
-              dayone
-            </span>
-            <span style={{ fontSize: 9.5, fontWeight: 700, color: '#ca2f2b', opacity: 0.85, marginTop: 2, letterSpacing: '0.2px' }}>
+        {/* Left: Brand Identity & Subtitles */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          {/* Day One Logo */}
+          <Link
+            href="/"
+            style={{
+              textDecoration: 'none',
+              display: 'flex',
+              flexDirection: 'column',
+              lineHeight: 0.95,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'baseline' }}>
+              <span
+                style={{
+                  fontSize: 34,
+                  fontWeight: 900,
+                  color: '#9e1820',
+                  letterSpacing: '-1.2px',
+                  fontFamily: "'Plus Jakarta Sans', var(--font-sans), sans-serif",
+                }}
+              >
+                dayone
+              </span>
+            </div>
+            <span
+              style={{
+                fontSize: 10.5,
+                fontWeight: 600,
+                color: '#9e1820',
+                fontFamily: 'var(--font-serif)',
+                fontStyle: 'italic',
+                letterSpacing: '0.2px',
+                marginTop: 2,
+              }}
+            >
               venture studio by iQue
             </span>
           </Link>
 
-          <div style={{ width: 1, height: 28, background: '#e2dbbe', margin: '0 2px' }} />
+          {/* Vertical Divider Line */}
+          <div style={{ width: 1, height: 38, background: '#ded6c1' }} />
 
-          {/* Center Title */}
+          {/* Dashboard Headings */}
           <div>
-            <div style={{ fontSize: 9, fontWeight: 800, color: '#ca2f2b', letterSpacing: '1.4px', textTransform: 'uppercase' }}>
+            <div
+              style={{
+                fontSize: 12,
+                fontWeight: 900,
+                color: '#9e1820',
+                letterSpacing: '1.8px',
+                textTransform: 'uppercase',
+              }}
+            >
               VENTURE STUDIO DASHBOARD
             </div>
-            <div style={{ fontSize: 13.5, fontWeight: 900, color: '#1e1b18', letterSpacing: '-0.3px', lineHeight: 1.15 }}>
+            <div
+              style={{
+                fontSize: 12.5,
+                fontWeight: 800,
+                color: '#26221f',
+                letterSpacing: '0.8px',
+                textTransform: 'uppercase',
+                lineHeight: 1.15,
+              }}
+            >
               COMMON PERFORMANCE SYSTEM
             </div>
-            <div style={{ fontSize: 9, color: '#78716c', fontWeight: 500 }}>
-              One system. {allStartups.length > 0 ? allStartups.length : 'Seven'} startups. Distinct journeys.
+            <div
+              style={{
+                fontSize: 9.5,
+                color: '#736b5e',
+                fontWeight: 500,
+              }}
+            >
+              One system. Seven startups. Distinct journeys.
             </div>
           </div>
         </div>
 
-        {/* Right: Screen Index & Spotlight Card with Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          {/* Startup Screen Indicator & Dot Track */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', marginRight: 4 }}>
-            <div style={{ fontSize: 9, fontWeight: 800, color: '#57534e', letterSpacing: '0.8px', textTransform: 'uppercase' }}>
+        {/* Right: Startup Screen Dots & Spotlight Card */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          {/* Startup Screen Indicator & Dot Progress */}
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 3 }}>
+            <div
+              style={{
+                fontSize: 9.5,
+                fontWeight: 800,
+                color: '#4a443a',
+                letterSpacing: '0.9px',
+                textTransform: 'uppercase',
+              }}
+            >
               STARTUP SCREEN 0{Math.max(1, currentStartupIndex + 1)} / 0{Math.max(7, allStartups.length)}
             </div>
 
-            {/* Dot Progress Tracker */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: 5, margin: '2px 0' }}>
-              {allStartups.map((s, idx) => {
+            {/* 7-Dot Timeline Progress Indicator */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              {Array.from({ length: Math.max(7, allStartups.length) }).map((_, idx) => {
+                const targetStartup = allStartups[idx]
                 const isSelected = idx === currentStartupIndex
                 return (
                   <button
-                    key={s.id}
-                    onClick={() => handleSelectStartup(s)}
+                    key={idx}
+                    onClick={() => targetStartup && handleSelectStartup(targetStartup)}
+                    disabled={!targetStartup}
                     style={{
-                      width: isSelected ? 16 : 6,
-                      height: 6,
+                      width: isSelected ? 18 : 6.5,
+                      height: 6.5,
                       borderRadius: 100,
-                      background: isSelected ? '#ca2f2b' : '#d8d1bc',
+                      background: isSelected ? '#9e1820' : '#ded6c1',
                       border: 'none',
-                      cursor: 'pointer',
+                      cursor: targetStartup ? 'pointer' : 'default',
                       transition: 'all 0.2s ease',
                       padding: 0,
                     }}
-                    title={`${s.name} (Screen 0${idx + 1})`}
+                    title={targetStartup ? `${targetStartup.name} (Screen 0${idx + 1})` : `Screen 0${idx + 1}`}
                   />
                 )
               })}
             </div>
 
-            <div style={{ fontSize: 8, fontWeight: 700, color: '#8c8375', letterSpacing: '0.6px', textTransform: 'uppercase' }}>
+            <div
+              style={{
+                fontSize: 8.5,
+                fontWeight: 700,
+                color: '#8c8270',
+                letterSpacing: '0.6px',
+                textTransform: 'uppercase',
+              }}
+            >
               WEEKLY PERFORMANCE OVERVIEW
             </div>
           </div>
 
-          <div style={{ width: 1, height: 28, background: '#e2dbbe' }} />
+          <div style={{ width: 1, height: 32, background: '#ded6c1' }} />
 
-          {/* Quick Swap Arrows & Startup Spotlight Card */}
+          {/* Quick Swap Arrows & Spotlight Card */}
           <div style={{ display: 'flex', alignItems: 'center', gap: 5, position: 'relative' }} ref={dropdownRef}>
             <button
               onClick={handlePrevStartup}
               title="Previous Startup (←)"
               style={{
-                width: 26,
-                height: 26,
-                borderRadius: 7,
+                width: 28,
+                height: 28,
+                borderRadius: 8,
                 background: '#ffffff',
-                border: '1px solid #e5dfcb',
+                border: '1px solid #ded6c1',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer',
-                color: '#57534e',
+                color: '#4a443a',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
               }}
             >
               <ChevronLeft className="w-3.5 h-3.5" />
@@ -419,27 +520,35 @@ export function CompanyTvDisplay({
               onClick={() => setIsDropdownOpen(!isDropdownOpen)}
               style={{
                 background: '#ffffff',
-                border: '1px solid #e5dfcb',
-                borderRadius: 10,
-                padding: '4px 10px',
+                border: '1px solid #ded6c1',
+                borderRadius: 12,
+                padding: '4px 12px 4px 10px',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 8,
+                gap: 10,
                 cursor: 'pointer',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.03)',
+                boxShadow: '0 2px 8px rgba(0,0,0,0.04)',
                 transition: 'all 0.15s ease',
               }}
             >
-              <CompanyLogo logoUrl={data.startup.logo_url} name={data.startup.name} size={28} />
+              <CompanyLogo logoUrl={data.startup.logo_url} name={data.startup.name} size={30} />
               <div>
-                <div style={{ fontSize: 8, fontWeight: 800, color: '#ca2f2b', letterSpacing: '0.6px', textTransform: 'uppercase' }}>
+                <div
+                  style={{
+                    fontSize: 8,
+                    fontWeight: 900,
+                    color: '#9e1820',
+                    letterSpacing: '0.8px',
+                    textTransform: 'uppercase',
+                  }}
+                >
                   STARTUP SPOTLIGHT
                 </div>
-                <div style={{ fontSize: 12.5, fontWeight: 900, color: '#1e1b18', lineHeight: 1.1 }}>
+                <div style={{ fontSize: 13, fontWeight: 900, color: '#9e1820', lineHeight: 1.1 }}>
                   {data.startup.name}
                 </div>
-                <div style={{ fontSize: 8.5, color: '#78716c', fontWeight: 500 }}>
-                  {data.sector || 'Portfolio Startup'}
+                <div style={{ fontSize: 9, color: '#736b5e', fontWeight: 600 }}>
+                  {data.sector || 'Skincare / Beauty Tech'}
                 </div>
               </div>
               <ChevronDown className="w-3 h-3 text-stone-400" />
@@ -449,64 +558,66 @@ export function CompanyTvDisplay({
               onClick={handleNextStartup}
               title="Next Startup (→)"
               style={{
-                width: 26,
-                height: 26,
-                borderRadius: 7,
+                width: 28,
+                height: 28,
+                borderRadius: 8,
                 background: '#ffffff',
-                border: '1px solid #e5dfcb',
+                border: '1px solid #ded6c1',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer',
-                color: '#57534e',
+                color: '#4a443a',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
               }}
             >
               <ChevronRight className="w-3.5 h-3.5" />
             </button>
 
-            {/* Fullscreen Button */}
+            {/* Fullscreen Toggle */}
             <button
               onClick={toggleFullscreen}
-              title="Toggle Fullscreen (F)"
+              title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen (F)'}
               style={{
-                width: 26,
-                height: 26,
-                borderRadius: 7,
+                width: 28,
+                height: 28,
+                borderRadius: 8,
                 background: '#ffffff',
-                border: '1px solid #e5dfcb',
+                border: '1px solid #ded6c1',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 cursor: 'pointer',
-                color: '#57534e',
-                marginLeft: 1,
+                color: '#4a443a',
+                boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+                marginLeft: 2,
               }}
             >
               {isFullscreen ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
             </button>
 
-            {/* Dropdown Menu */}
+            {/* Startup Swapper Dropdown */}
             {isDropdownOpen && (
               <div
                 style={{
                   position: 'absolute',
-                  top: 'calc(100% + 6px)',
+                  top: '100%',
                   right: 0,
-                  width: 290,
+                  marginTop: 6,
+                  width: 260,
                   background: '#ffffff',
-                  border: '1px solid #e5dfcb',
+                  border: '1px solid #ded6c1',
                   borderRadius: 12,
-                  boxShadow: '0 12px 30px rgba(0, 0, 0, 0.15)',
+                  boxShadow: '0 12px 32px rgba(0,0,0,0.12)',
                   padding: 10,
                   zIndex: 99,
-                  animation: 'fadeIn 0.15s ease-out',
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8, padding: '0 4px' }}>
-                  <span style={{ fontSize: 10, fontWeight: 800, color: '#8c8375', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                  <span style={{ fontSize: 10, fontWeight: 900, color: '#8c8270', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
                     Select Portfolio Startup
                   </span>
-                  <span style={{ fontSize: 9.5, color: '#ca2f2b', fontWeight: 800 }}>
+                  <span style={{ fontSize: 9.5, color: '#9e1820', fontWeight: 800 }}>
                     {allStartups.length} Available
                   </span>
                 </div>
@@ -519,7 +630,7 @@ export function CompanyTvDisplay({
                     padding: '5px 8px',
                     borderRadius: 7,
                     background: '#fcfbf7',
-                    border: '1px solid #e5dfcb',
+                    border: '1px solid #ded6c1',
                     marginBottom: 6,
                   }}
                 >
@@ -554,8 +665,8 @@ export function CompanyTvDisplay({
                           justifyContent: 'space-between',
                           padding: '6px 8px',
                           borderRadius: 7,
-                          background: isSelected ? 'rgba(202, 47, 43, 0.08)' : 'transparent',
-                          border: isSelected ? '1px solid #ca2f2b' : '1px solid transparent',
+                          background: isSelected ? 'rgba(158, 24, 32, 0.08)' : 'transparent',
+                          border: isSelected ? '1px solid #9e1820' : '1px solid transparent',
                           cursor: 'pointer',
                           color: '#1e1b18',
                           textAlign: 'left',
@@ -568,12 +679,12 @@ export function CompanyTvDisplay({
                             <div style={{ fontSize: 11.5, fontWeight: 700, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                               {s.name}
                             </div>
-                            <div style={{ fontSize: 9, color: '#78716c' }}>
+                            <div style={{ fontSize: 9, color: '#736b5e' }}>
                               {s.sector || 'Portfolio Startup'}
                             </div>
                           </div>
                         </div>
-                        <span style={{ fontSize: 9, color: '#8c8375', fontWeight: 700 }}>
+                        <span style={{ fontSize: 9, color: '#8c8270', fontWeight: 700 }}>
                           0{idx + 1}
                         </span>
                       </button>
@@ -586,426 +697,503 @@ export function CompanyTvDisplay({
         </div>
       </header>
 
-      {/* ── MAIN DASHBOARD CONTENT (Balanced Proportions, Zero Empty Space) ── */}
+      {/* ── MAIN 4-ROW + HERO GRID (EXACT 100% FIDELITY TO REFERENCE MOCKUP) ── */}
       <main
         style={{
           flex: 1,
           minHeight: 0,
           display: 'grid',
-          gridTemplateColumns: '1fr 290px',
+          gridTemplateColumns: '1fr 275px',
           gap: 10,
-          margin: '6px 0',
-          opacity: isSwitching ? 0.4 : 1,
+          margin: '8px 0',
+          opacity: isSwitching ? 0.35 : 1,
           transition: 'opacity 0.15s ease',
+          position: 'relative',
+          zIndex: 1,
         }}
       >
-        {/* ── LEFT AREA: 3 PROPORTIONAL CONTENT TIERS ── */}
+        {/* ── LEFT COLUMN: 4 HORIZONTAL ROWS ── */}
         <div
           style={{
             display: 'flex',
             flexDirection: 'column',
-            gap: 8,
-            minHeight: 0,
+            gap: 9,
             height: '100%',
+            minHeight: 0,
           }}
         >
-          {/* ── TIER 1: EXECUTIVE KPI & HEALTH BAR (~102px height) ── */}
-          <div style={{ height: 102, flexShrink: 0, display: 'grid', gridTemplateColumns: '1.05fr 1.35fr 0.9fr 0.9fr', gap: 8 }}>
-            {/* Card 1: Current Stage */}
+          {/* ══════════════════════════════════════════════════════════
+              ROW 1 (Height: ~18%): 4 Cards
+              Current Stage | Overall Health | Sprint Priorities | Completed
+             ══════════════════════════════════════════════════════════ */}
+          <div
+            style={{
+              height: '18%',
+              minHeight: 0,
+              display: 'grid',
+              gridTemplateColumns: '1.15fr 1.6fr 1.05fr 1.1fr',
+              gap: 9,
+            }}
+          >
+            {/* Card 1.1: Current Stage */}
             <div style={cardStyle}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <Layers style={{ width: 13, height: 13, color: '#ca2f2b' }} />
-                  <span style={{ fontSize: 10.5, fontWeight: 800, color: '#1e1b18' }}>Current Stage</span>
-                </div>
-                <span style={{ fontSize: 9, color: '#ca2f2b', fontWeight: 800 }}>Scale Phase</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Layers style={{ width: 14, height: 14, color: '#9e1820' }} />
+                <span style={{ fontSize: 11, fontWeight: 800, color: '#1e1b18' }}>Current Stage</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5, margin: '2px 0' }}>
+
+              {/* Segmented Pill Selector: MVP | GTM | Growth */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  background: '#f8f5ed',
+                  borderRadius: 100,
+                  padding: '3px 4px',
+                  border: '1px solid #e8e2d4',
+                  justifyContent: 'space-between',
+                }}
+              >
                 {(['MVP', 'GTM', 'Growth'] as const).map((stg) => {
                   const isActive = (data.stage || 'Growth') === stg
                   return (
-                    <span
+                    <div
                       key={stg}
                       style={{
-                        padding: '4px 12px',
+                        padding: '4px 14px',
                         borderRadius: 100,
                         fontSize: 10,
                         fontWeight: 800,
-                        background: isActive ? '#ca2f2b' : '#fbf9f1',
-                        color: isActive ? '#ffffff' : '#78716c',
-                        border: isActive ? '1px solid #ca2f2b' : '1px solid #e5dfcb',
+                        background: isActive ? '#9e1820' : 'transparent',
+                        color: isActive ? '#ffffff' : '#736b5e',
+                        boxShadow: isActive ? '0 2px 6px rgba(158, 24, 32, 0.3)' : 'none',
                         letterSpacing: '0.4px',
+                        transition: 'all 0.15s ease',
                       }}
                     >
                       {stg}
-                    </span>
+                    </div>
                   )
                 })}
               </div>
-              <div style={{ fontSize: 9, color: '#78716c', display: 'flex', alignItems: 'center', gap: 4 }}>
-                <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#059669' }} />
-                <span>Active venture incubation milestone track</span>
-              </div>
             </div>
 
-            {/* Card 2: Overall Health (Dense & Informative) */}
+            {/* Card 1.2: Overall Health */}
             <div style={cardStyle}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <Heart style={{ width: 13, height: 13, color: '#ca2f2b' }} />
-                  <span style={{ fontSize: 10.5, fontWeight: 800, color: '#1e1b18' }}>Overall Health</span>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <Heart style={{ width: 14, height: 14, color: '#9e1820' }} />
+                  <span style={{ fontSize: 11, fontWeight: 800, color: '#1e1b18' }}>Overall Health</span>
                 </div>
                 <div
                   style={{
                     display: 'flex',
                     alignItems: 'center',
                     gap: 4,
-                    padding: '2px 7px',
-                    borderRadius: 100,
-                    background: '#ecfdf5',
-                    border: '1px solid #a7f3d0',
-                    fontSize: 9,
+                    fontSize: 9.5,
                     fontWeight: 700,
                     color: '#059669',
                   }}
                 >
-                  <span style={{ width: 5, height: 5, borderRadius: '50%', background: '#059669' }} />
+                  <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#059669' }} />
                   <span>{data.healthScore?.status || 'On Track'}</span>
                 </div>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', margin: '1px 0' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
                 <div>
-                  <span style={{ fontSize: 28, fontWeight: 900, color: '#1e1b18', lineHeight: 1 }}>
+                  <span style={{ fontSize: 32, fontWeight: 900, color: '#1e1b18', lineHeight: 1 }}>
                     {data.healthScore?.score || 76}
                   </span>
-                  <span style={{ fontSize: 13, fontWeight: 700, color: '#8c8375', marginLeft: 2 }}>/100</span>
+                  <span style={{ fontSize: 13, fontWeight: 700, color: '#8c8270', marginLeft: 2 }}>/100</span>
                 </div>
-                <span style={{ fontSize: 9, color: '#78716c', fontStyle: 'italic', maxWidth: '52%', textAlign: 'right' }}>
+                <div
+                  style={{
+                    fontSize: 9.5,
+                    color: '#736b5e',
+                    fontStyle: 'italic',
+                    fontFamily: 'var(--font-serif)',
+                    maxWidth: '55%',
+                    textAlign: 'right',
+                    lineHeight: 1.2,
+                  }}
+                >
                   {data.healthScore?.motto || 'Building something brighter.'}
-                </span>
+                </div>
               </div>
 
-              {/* Progress Bar & Sub-indicators */}
-              <div>
-                <div style={{ width: '100%', height: 6, borderRadius: 100, background: '#f5e4e4', overflow: 'hidden' }}>
-                  <div
-                    style={{
-                      width: `${data.healthScore?.score || 76}%`,
-                      height: '100%',
-                      borderRadius: 100,
-                      background: 'linear-gradient(90deg, #ca2f2b 0%, #e63935 100%)',
-                    }}
-                  />
-                </div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 8.5, color: '#78716c', marginTop: 3 }}>
-                  <span>Velocity: <strong>{data.healthScore?.velocity || 92}%</strong></span>
-                  <span>Capital: <strong>{data.healthScore?.efficiency || 86}%</strong></span>
-                  <span>Quality: <strong>{data.healthScore?.alignment || 88}%</strong></span>
-                </div>
+              {/* Rounded Crimson Horizontal Progress Bar */}
+              <div style={{ width: '100%', height: 7, borderRadius: 100, background: '#fae8e8', overflow: 'hidden' }}>
+                <div
+                  style={{
+                    width: `${data.healthScore?.score || 76}%`,
+                    height: '100%',
+                    borderRadius: 100,
+                    background: 'linear-gradient(90deg, #9e1820 0%, #ca2f2b 100%)',
+                  }}
+                />
               </div>
             </div>
 
-            {/* Card 3: This Week's Priorities */}
+            {/* Card 1.3: This Week's Priorities */}
             <div style={cardStyle}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <ListOrdered style={{ width: 13, height: 13, color: '#ca2f2b' }} />
-                  <span style={{ fontSize: 10.5, fontWeight: 800, color: '#1e1b18' }}>Sprint Priorities</span>
-                </div>
-                <span style={{ fontSize: 8.5, background: '#fdf2f2', color: '#ca2f2b', padding: '1px 5px', borderRadius: 4, fontWeight: 700 }}>
-                  Active
-                </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <ListOrdered style={{ width: 14, height: 14, color: '#9e1820' }} />
+                <span style={{ fontSize: 11, fontWeight: 800, color: '#1e1b18' }}>This Week&apos;s Priorities</span>
               </div>
-              <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-                <span style={{ fontSize: 28, fontWeight: 900, color: '#1e1b18', lineHeight: 1 }}>
-                  {data.priorities?.total || 5}
-                </span>
-                <span style={{ fontSize: 9.5, color: '#78716c' }}>High Impact Goals</span>
-              </div>
-              <div style={{ fontSize: 8.5, color: '#059669', fontWeight: 700 }}>
-                {data.priorities?.completed || 4} Shipped • {Math.max(0, (data.priorities?.total || 5) - (data.priorities?.completed || 4))} in flight
+              <div style={{ fontSize: 38, fontWeight: 900, color: '#1e1b18', lineHeight: 1, paddingLeft: 2 }}>
+                {data.priorities?.total || 5}
               </div>
             </div>
 
-            {/* Card 4: Completed Velocity */}
+            {/* Card 1.4: Completed */}
             <div style={cardStyle}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <CheckCircle2 style={{ width: 13, height: 13, color: '#ca2f2b' }} />
-                  <span style={{ fontSize: 10.5, fontWeight: 800, color: '#1e1b18' }}>Completed</span>
-                </div>
-                <span style={{ fontSize: 9, color: '#059669', fontWeight: 800 }}>
-                  {data.priorities?.rate || 80}% Pace
-                </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <CheckCircle2 style={{ width: 14, height: 14, color: '#9e1820' }} />
+                <span style={{ fontSize: 11, fontWeight: 800, color: '#1e1b18' }}>Completed</span>
               </div>
-              <div style={{ fontSize: 24, fontWeight: 900, color: '#1e1b18', lineHeight: 1 }}>
+              <div style={{ fontSize: 32, fontWeight: 900, color: '#1e1b18', lineHeight: 1, paddingLeft: 2 }}>
                 {data.priorities?.completed || 4} of {data.priorities?.total || 5}
-              </div>
-              <div style={{ fontSize: 8.5, color: '#78716c' }}>
-                +2 Early Deliveries • 0 Critical Late
               </div>
             </div>
           </div>
 
-          {/* ── TIER 2: CORE ANALYTICS ENGINE (~255px height) ── */}
-          <div style={{ flex: 1, minHeight: 0, display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 8 }}>
-            {/* Module A: Financial Runway & Growth Momentum */}
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 8, height: '100%', minHeight: 0 }}>
-              {/* Financials & Target 4-Tile Row */}
-              <div style={{ height: 86, flexShrink: 0, display: 'grid', gridTemplateColumns: '1.05fr 1.25fr 1.05fr 0.9fr', gap: 8 }}>
-                {/* Tile 1: Weekly Execution */}
-                <div style={{ ...cardStyle, flexDirection: 'row', alignItems: 'center', gap: 10, padding: '6px 10px' }}>
-                  <div style={{ position: 'relative', width: 44, height: 44, flexShrink: 0 }}>
-                    <svg width="44" height="44" viewBox="0 0 40 40">
-                      <circle cx="20" cy="20" r="15.5" fill="none" stroke="#f5e4e4" strokeWidth="4.5" />
-                      <circle
-                        cx="20"
-                        cy="20"
-                        r="15.5"
-                        fill="none"
-                        stroke="#ca2f2b"
-                        strokeWidth="4.8"
-                        strokeDasharray={`${(data.priorities?.rate || 80) * 0.974} 100`}
-                        strokeDashoffset="25"
-                        strokeLinecap="round"
-                      />
-                    </svg>
-                    <div
-                      style={{
-                        position: 'absolute',
-                        inset: 0,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: 10.5,
-                        fontWeight: 900,
-                        color: '#1e1b18',
-                      }}
-                    >
-                      {data.priorities?.rate || 80}%
-                    </div>
-                  </div>
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{ fontSize: 9.5, fontWeight: 800, color: '#ca2f2b', textTransform: 'uppercase' }}>
-                      Execution
-                    </div>
-                    <div style={{ fontSize: 8.5, color: '#78716c', lineHeight: 1.2 }}>
-                      Consistent momentum
-                    </div>
+          {/* ══════════════════════════════════════════════════════════
+              ROW 2 (Height: ~26%): 3 Cards
+              Weekly Execution | Monthly Target | Financials (This Month)
+             ══════════════════════════════════════════════════════════ */}
+          <div
+            style={{
+              height: '26%',
+              minHeight: 0,
+              display: 'grid',
+              gridTemplateColumns: '1.05fr 1.15fr 1.25fr',
+              gap: 9,
+            }}
+          >
+            {/* Card 2.1: Weekly Execution */}
+            <div style={cardStyle}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ width: 14, height: 14, borderRadius: '50%', border: '2px solid #9e1820', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                  <div style={{ width: 4, height: 4, borderRadius: '50%', background: '#9e1820' }} />
+                </div>
+                <span style={{ fontSize: 11, fontWeight: 800, color: '#1e1b18' }}>Weekly Execution</span>
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                {/* SVG Radial Donut Meter */}
+                <div style={{ position: 'relative', width: 62, height: 62, flexShrink: 0 }}>
+                  <svg width="62" height="62" viewBox="0 0 44 44">
+                    <circle cx="22" cy="22" r="17" fill="none" stroke="#fae8e8" strokeWidth="5" />
+                    <circle
+                      cx="22"
+                      cy="22"
+                      r="17"
+                      fill="none"
+                      stroke="#9e1820"
+                      strokeWidth="5"
+                      strokeDasharray={`${(data.priorities?.rate || 80) * 1.068} 107`}
+                      strokeDashoffset="26.75"
+                      strokeLinecap="round"
+                    />
+                  </svg>
+                  <div
+                    style={{
+                      position: 'absolute',
+                      inset: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: 13,
+                      fontWeight: 900,
+                      color: '#1e1b18',
+                    }}
+                  >
+                    {data.priorities?.rate || 80}%
                   </div>
                 </div>
 
-                {/* Tile 2: Monthly Target */}
-                <div style={{ ...cardStyle, padding: '6px 10px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: 9.5, fontWeight: 800, color: '#1e1b18' }}>Monthly Target</span>
-                    <span style={{ fontSize: 8.5, color: '#57534e', fontWeight: 700 }}>
-                      {data.financials?.targetRate || 72}%
-                    </span>
+                {/* Right Caption */}
+                <div>
+                  <div
+                    style={{
+                      fontSize: 10,
+                      fontWeight: 900,
+                      color: '#9e1820',
+                      letterSpacing: '0.6px',
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    CONSISTENT MOMENTUM
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between' }}>
-                    <span style={{ fontSize: 18, fontWeight: 900, color: '#1e1b18', lineHeight: 1 }}>
-                      {data.financials?.monthlyTarget || '₹10L'}
-                    </span>
-                    <span style={{ fontSize: 9, color: '#78716c' }}>
-                      {data.financials?.achievedAmount || '₹7.2L'}
-                    </span>
+                  <div style={{ fontSize: 9.5, color: '#736b5e', lineHeight: 1.3, marginTop: 2 }}>
+                    Ideas to impact, week by week.
                   </div>
-                  <div style={{ width: '100%', height: 5, borderRadius: 100, background: '#f5e4e4', overflow: 'hidden' }}>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 2.2: Monthly Target */}
+            <div style={cardStyle}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Target style={{ width: 14, height: 14, color: '#9e1820' }} />
+                <span style={{ fontSize: 11, fontWeight: 800, color: '#1e1b18' }}>Monthly Target</span>
+              </div>
+
+              <div>
+                <div style={{ fontSize: 28, fontWeight: 900, color: '#1e1b18', lineHeight: 1 }}>
+                  {data.financials?.monthlyTarget || '₹10L'}
+                </div>
+
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                  <span style={{ fontSize: 11, fontWeight: 800, color: '#1e1b18', whiteSpace: 'nowrap' }}>
+                    Achieved: {data.financials?.achievedAmount || '₹7.2L'}
+                  </span>
+                  <div style={{ flex: 1, height: 7, borderRadius: 100, background: '#fae8e8', overflow: 'hidden' }}>
                     <div
                       style={{
                         width: `${data.financials?.targetRate || 72}%`,
                         height: '100%',
-                        background: 'linear-gradient(90deg, #ca2f2b 0%, #e63935 100%)',
+                        background: 'linear-gradient(90deg, #9e1820 0%, #ca2f2b 100%)',
                       }}
                     />
                   </div>
-                </div>
-
-                {/* Tile 3: Financials */}
-                <div style={{ ...cardStyle, padding: '6px 10px' }}>
-                  <div style={{ fontSize: 9.5, fontWeight: 800, color: '#1e1b18' }}>Financials</div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, marginTop: 2 }}>
-                    <div>
-                      <div style={{ fontSize: 8, color: '#78716c' }}>Revenue</div>
-                      <div style={{ fontSize: 12.5, fontWeight: 900, color: '#1e1b18' }}>
-                        {data.financials?.revenue || '₹7.2L'}
-                      </div>
-                      <div style={{ width: '100%', height: 6, background: '#ca2f2b', borderRadius: 2, marginTop: 2 }} />
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 8, color: '#78716c' }}>Burn</div>
-                      <div style={{ fontSize: 12.5, fontWeight: 900, color: '#1e1b18' }}>
-                        {data.financials?.burn || '₹3.1L'}
-                      </div>
-                      <div style={{ width: '58%', height: 6, background: '#fca5a5', borderRadius: 2, marginTop: 2 }} />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Tile 4: Runway */}
-                <div style={{ ...cardStyle, padding: '6px 10px' }}>
-                  <div style={{ fontSize: 9.5, fontWeight: 800, color: '#1e1b18' }}>Runway</div>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 3 }}>
-                    <span style={{ fontSize: 20, fontWeight: 900, color: '#1e1b18', lineHeight: 1 }}>
-                      {data.financials?.runwayMonths || 8}
-                    </span>
-                    <span style={{ fontSize: 10, fontWeight: 800, color: '#1e1b18' }}>Months</span>
-                  </div>
-                  <div style={{ fontSize: 8, color: '#059669', fontWeight: 700 }}>
-                    Solid runway to scale
-                  </div>
-                </div>
-              </div>
-
-              {/* Growth Metrics & Trend Sub-Card */}
-              <div style={{ ...cardStyle, flex: 1, minHeight: 0, padding: '8px 12px' }}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                    <TrendingUp style={{ width: 13, height: 13, color: '#ca2f2b' }} />
-                    <span style={{ fontSize: 10.5, fontWeight: 800, color: '#1e1b18' }}>Growth & Acquisition Trend</span>
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 8.5 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                      <span style={{ width: 5.5, height: 5.5, borderRadius: '50%', background: '#ca2f2b' }} />
-                      <span style={{ color: '#78716c' }}>Leads</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                      <span style={{ width: 5.5, height: 5.5, borderRadius: '50%', background: '#fca5a5' }} />
-                      <span style={{ color: '#78716c' }}>Customers</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: '170px 1fr', gap: 12, flex: 1, minHeight: 0 }}>
-                  {/* Left 3 Stat Columns */}
-                  <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'space-around', borderRight: '1px solid #f0ead8', paddingRight: 8 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: 9, color: '#78716c' }}>Leads</span>
-                      <span style={{ fontSize: 15, fontWeight: 900, color: '#1e1b18' }}>{data.growth?.leads || 840}</span>
-                      <span style={{ fontSize: 8.5, fontWeight: 800, color: '#059669' }}>▲ {data.growth?.leadsChange || '+18%'}</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: 9, color: '#78716c' }}>Customers</span>
-                      <span style={{ fontSize: 15, fontWeight: 900, color: '#1e1b18' }}>{data.growth?.customers || 126}</span>
-                      <span style={{ fontSize: 8.5, fontWeight: 800, color: '#059669' }}>▲ {data.growth?.customersChange || '+24%'}</span>
-                    </div>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                      <span style={{ fontSize: 9, color: '#78716c' }}>CAC</span>
-                      <span style={{ fontSize: 15, fontWeight: 900, color: '#1e1b18' }}>{data.growth?.cac || '₹420'}</span>
-                      <span style={{ fontSize: 8.5, fontWeight: 800, color: '#059669' }}>▼ {data.growth?.cacChange || '+12%'}</span>
-                    </div>
-                  </div>
-
-                  {/* Right Chart */}
-                  <div style={{ width: '100%', height: '100%', minHeight: 75 }}>
-                    <ResponsiveContainer width="100%" height="100%">
-                      <RechartsBarChart data={data.growth?.weeklyTrend || []} margin={{ top: 2, right: 0, left: -28, bottom: -6 }}>
-                        <CartesianGrid strokeDasharray="2 2" stroke="#ede7d5" vertical={false} />
-                        <XAxis dataKey="day" tick={{ fontSize: 7.5, fill: '#78716c' }} axisLine={false} tickLine={false} />
-                        <YAxis tick={{ fontSize: 7.5, fill: '#78716c' }} axisLine={false} tickLine={false} />
-                        <Bar dataKey="leads" fill="#ca2f2b" radius={[2, 2, 0, 0]} isAnimationActive={false} />
-                        <Bar dataKey="customers" fill="#fca5a5" radius={[2, 2, 0, 0]} isAnimationActive={false} />
-                      </RechartsBarChart>
-                    </ResponsiveContainer>
-                  </div>
+                  <span style={{ fontSize: 10, fontWeight: 800, color: '#1e1b18' }}>
+                    {data.financials?.targetRate || 72}%
+                  </span>
                 </div>
               </div>
             </div>
 
-            {/* Module B: Day One Architecture — Functional Domain Pillars */}
-            <div style={{ ...cardStyle, height: '100%', minHeight: 0, padding: '9px 13px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <ShieldCheck style={{ width: 14, height: 14, color: '#ca2f2b' }} />
-                  <span style={{ fontSize: 11, fontWeight: 800, color: '#1e1b18' }}>
-                    Functional Domain Pillars
-                  </span>
-                </div>
-                <span style={{ fontSize: 8.5, color: '#059669', fontWeight: 800, background: '#ecfdf5', padding: '1px 6px', borderRadius: 4 }}>
-                  All Connected
-                </span>
+            {/* Card 2.3: Financials (This Month) + Integrated Runway */}
+            <div style={cardStyle}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <BarChart3 style={{ width: 14, height: 14, color: '#9e1820' }} />
+                <span style={{ fontSize: 11, fontWeight: 800, color: '#1e1b18' }}>Financials (This Month)</span>
               </div>
 
-              {/* List of Domains */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1, minHeight: 0, justifyContent: 'space-around' }}>
-                {domainReadiness.slice(0, 5).map((dom, idx) => (
-                  <div key={idx}>
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: 9.5, marginBottom: 2 }}>
-                      <span style={{ fontWeight: 700, color: '#1e1b18' }}>{dom.name}</span>
-                      <span style={{ color: '#78716c', fontWeight: 600 }}>
-                        {dom.done}/{dom.total} tasks • <strong style={{ color: dom.rate >= 80 ? '#059669' : '#ca2f2b' }}>{dom.rate}%</strong>
-                      </span>
-                    </div>
-                    <div style={{ width: '100%', height: 5, borderRadius: 100, background: '#f5e4e4', overflow: 'hidden' }}>
-                      <div
-                        style={{
-                          width: `${dom.rate}%`,
-                          height: '100%',
-                          borderRadius: 100,
-                          background: dom.rate >= 80 ? 'linear-gradient(90deg, #059669 0%, #10b981 100%)' : 'linear-gradient(90deg, #ca2f2b 0%, #f59e0b 100%)',
-                        }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* 3 Milestone Velocity Pills at Bottom */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6, borderTop: '1px solid #f0ead8', paddingTop: 6, marginTop: 4 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                  <Flag style={{ width: 11, height: 11, color: '#ca2f2b' }} />
+              <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: 12, alignItems: 'center' }}>
+                {/* Left: Revenue vs Burn */}
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
                   <div>
-                    <div style={{ fontSize: 7.5, color: '#78716c' }}>Milestones</div>
-                    <div style={{ fontSize: 11, fontWeight: 900, color: '#1e1b18' }}>{data.execution?.milestonesCount || '7/10'}</div>
+                    <div style={{ fontSize: 9, color: '#736b5e' }}>Revenue</div>
+                    <div style={{ fontSize: 15, fontWeight: 900, color: '#1e1b18', marginTop: 1 }}>
+                      {data.financials?.revenue || '₹7.2L'}
+                    </div>
+                    <div style={{ width: '100%', height: 26, background: '#9e1820', borderRadius: 4, marginTop: 4 }} />
+                  </div>
+                  <div>
+                    <div style={{ fontSize: 9, color: '#736b5e' }}>Burn</div>
+                    <div style={{ fontSize: 15, fontWeight: 900, color: '#1e1b18', marginTop: 1 }}>
+                      {data.financials?.burn || '₹3.1L'}
+                    </div>
+                    <div style={{ width: '100%', height: 26, background: '#fca5a5', borderRadius: 4, marginTop: 4 }} />
                   </div>
                 </div>
 
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, borderLeft: '1px solid #f0ead8', paddingLeft: 6 }}>
-                  <Star style={{ width: 11, height: 11, color: '#ca2f2b' }} />
-                  <div>
-                    <div style={{ fontSize: 7.5, color: '#78716c' }}>Mentor Rating</div>
-                    <div style={{ fontSize: 11, fontWeight: 900, color: '#1e1b18' }}>{data.execution?.mentorRating || '8/10'}</div>
+                {/* Right: Runway Column */}
+                <div style={{ borderLeft: '1px solid #f0eadb', paddingLeft: 10 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <Hourglass style={{ width: 11, height: 11, color: '#9e1820' }} />
+                    <span style={{ fontSize: 9.5, fontWeight: 800, color: '#1e1b18' }}>Runway</span>
                   </div>
-                </div>
-
-                <div style={{ display: 'flex', alignItems: 'center', gap: 4, borderLeft: '1px solid #f0ead8', paddingLeft: 6 }}>
-                  <Zap style={{ width: 11, height: 11, color: '#ca2f2b' }} />
-                  <div>
-                    <div style={{ fontSize: 7.5, color: '#78716c' }}>Founder Score</div>
-                    <div style={{ fontSize: 11, fontWeight: 900, color: '#1e1b18' }}>{data.execution?.founderExecutionScore || 82}%</div>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 3, marginTop: 2 }}>
+                    <span style={{ fontSize: 24, fontWeight: 900, color: '#1e1b18', lineHeight: 1 }}>
+                      {data.financials?.runwayMonths || 8}
+                    </span>
+                    <span style={{ fontSize: 11, fontWeight: 800, color: '#1e1b18' }}>Months</span>
+                  </div>
+                  <div style={{ fontSize: 8.5, color: '#059669', fontWeight: 600, marginTop: 2, lineHeight: 1.15 }}>
+                    {data.financials?.runwayStatus || 'Solid runway to scale.'}
                   </div>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* ── TIER 3: OPERATIONS, WINS & VALUE SPOTLIGHT (~145px height) ── */}
-          <div style={{ height: 145, flexShrink: 0, display: 'grid', gridTemplateColumns: '1.1fr 1.15fr 1.25fr', gap: 8 }}>
-            {/* Card 13: Top Wins This Week */}
-            <div style={{ ...cardStyle, position: 'relative' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <Trophy style={{ width: 13, height: 13, color: '#ca2f2b' }} />
-                  <span style={{ fontSize: 10.5, fontWeight: 800, color: '#1e1b18' }}>Top Wins This Week</span>
-                </div>
-                <span style={{ fontSize: 8.5, color: '#059669', fontWeight: 700 }}>Delivered</span>
+          {/* ══════════════════════════════════════════════════════════
+              ROW 3 (Height: ~28%): 3 Cards
+              Growth Metrics | Leads & Customers Trend | Quadrant Key Milestones
+             ══════════════════════════════════════════════════════════ */}
+          <div
+            style={{
+              height: '28%',
+              minHeight: 0,
+              display: 'grid',
+              gridTemplateColumns: '1.05fr 1.25fr 1.15fr',
+              gap: 9,
+            }}
+          >
+            {/* Card 3.1: Growth Metrics (This Week) */}
+            <div style={cardStyle}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <TrendingUp style={{ width: 14, height: 14, color: '#9e1820' }} />
+                <span style={{ fontSize: 11, fontWeight: 800, color: '#1e1b18' }}>Growth Metrics (This Week)</span>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, zIndex: 1, justifyContent: 'space-around', flex: 1 }}>
-                {(data.highlights?.topWins || []).slice(0, 3).map((win, idx) => (
-                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 9.5, fontWeight: 600, color: '#1e1b18' }}>
+
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 6 }}>
+                <div>
+                  <div style={{ fontSize: 9, color: '#736b5e' }}>Leads</div>
+                  <div style={{ fontSize: 18, fontWeight: 900, color: '#1e1b18', lineHeight: 1.1, marginTop: 2 }}>
+                    {data.growth?.leads || 840}
+                  </div>
+                  <div style={{ fontSize: 9, fontWeight: 800, color: '#059669', marginTop: 3 }}>
+                    ▲ {data.growth?.leadsChange || '+18%'}
+                  </div>
+                  <div style={{ fontSize: 8, color: '#8c8270' }}>vs last week</div>
+                </div>
+
+                <div>
+                  <div style={{ fontSize: 9, color: '#736b5e' }}>Customers</div>
+                  <div style={{ fontSize: 18, fontWeight: 900, color: '#1e1b18', lineHeight: 1.1, marginTop: 2 }}>
+                    {data.growth?.customers || 126}
+                  </div>
+                  <div style={{ fontSize: 9, fontWeight: 800, color: '#059669', marginTop: 3 }}>
+                    ▲ {data.growth?.customersChange || '+24%'}
+                  </div>
+                  <div style={{ fontSize: 8, color: '#8c8270' }}>vs last week</div>
+                </div>
+
+                <div>
+                  <div style={{ fontSize: 9, color: '#736b5e' }}>CAC</div>
+                  <div style={{ fontSize: 18, fontWeight: 900, color: '#1e1b18', lineHeight: 1.1, marginTop: 2 }}>
+                    {data.growth?.cac || '₹420'}
+                  </div>
+                  <div style={{ fontSize: 9, fontWeight: 800, color: '#059669', marginTop: 3 }}>
+                    ▼ {data.growth?.cacChange || '+12%'}
+                  </div>
+                  <div style={{ fontSize: 8, color: '#8c8270' }}>vs last week</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Card 3.2: Leads & Customers Trend */}
+            <div style={cardStyle}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <BarChart3 style={{ width: 14, height: 14, color: '#9e1820' }} />
+                  <span style={{ fontSize: 11, fontWeight: 800, color: '#1e1b18' }}>Leads & Customers Trend</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 8.5 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                    <span style={{ width: 5.5, height: 5.5, borderRadius: '50%', background: '#9e1820' }} />
+                    <span style={{ color: '#736b5e' }}>Leads</span>
+                  </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
+                    <span style={{ width: 5.5, height: 5.5, borderRadius: '50%', background: '#fca5a5' }} />
+                    <span style={{ color: '#736b5e' }}>Customers</span>
+                  </div>
+                </div>
+              </div>
+
+              <div style={{ width: '100%', height: 75 }}>
+                <ResponsiveContainer width="100%" height="100%">
+                  <RechartsBarChart
+                    data={data.growth?.weeklyTrend || []}
+                    margin={{ top: 2, right: 0, left: -26, bottom: -6 }}
+                    barGap={2}
+                  >
+                    <CartesianGrid strokeDasharray="2 2" stroke="#ede5d6" vertical={false} />
+                    <XAxis dataKey="day" tick={{ fontSize: 8, fill: '#736b5e' }} axisLine={false} tickLine={false} />
+                    <YAxis tick={{ fontSize: 8, fill: '#736b5e' }} axisLine={false} tickLine={false} />
+                    <Bar dataKey="leads" fill="#9e1820" radius={[2, 2, 0, 0]} isAnimationActive={false} barSize={8} />
+                    <Bar dataKey="customers" fill="#fca5a5" radius={[2, 2, 0, 0]} isAnimationActive={false} barSize={8} />
+                  </RechartsBarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Card 3.3: Quadrant Metric Card (Milestones, Blockers, Mentor, Founder Score) */}
+            <div style={cardStyle}>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr', gap: 8, height: '100%' }}>
+                {/* Top-Left: Key Milestones */}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <Flag style={{ width: 11, height: 11, color: '#9e1820' }} />
+                    <span style={{ fontSize: 9.5, fontWeight: 800, color: '#1e1b18' }}>Key Milestones</span>
+                  </div>
+                  <div style={{ fontSize: 16, fontWeight: 900, color: '#1e1b18', marginTop: 2 }}>
+                    {data.execution?.milestonesCount || '7/10'}
+                  </div>
+                  <div style={{ width: '85%', height: 5, borderRadius: 100, background: '#fae8e8', overflow: 'hidden', marginTop: 3 }}>
+                    <div style={{ width: '70%', height: '100%', background: '#9e1820' }} />
+                  </div>
+                </div>
+
+                {/* Top-Right: Critical Blockers */}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <AlertTriangle style={{ width: 11, height: 11, color: '#9e1820' }} />
+                    <span style={{ fontSize: 9.5, fontWeight: 800, color: '#1e1b18' }}>Critical Blockers</span>
+                  </div>
+                  <div style={{ fontSize: 20, fontWeight: 900, color: '#9e1820', marginTop: 2 }}>
+                    {data.execution?.criticalBlockersCount || 2}
+                  </div>
+                </div>
+
+                {/* Bottom-Left: Mentor Rating */}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <Star style={{ width: 11, height: 11, color: '#9e1820' }} />
+                    <span style={{ fontSize: 9.5, fontWeight: 800, color: '#1e1b18' }}>Mentor Rating</span>
+                  </div>
+                  <div style={{ fontSize: 16, fontWeight: 900, color: '#1e1b18', marginTop: 2 }}>
+                    {data.execution?.mentorRating || '8/10'}
+                  </div>
+                </div>
+
+                {/* Bottom-Right: Founder Execution Score */}
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                    <Zap style={{ width: 11, height: 11, color: '#9e1820' }} />
+                    <span style={{ fontSize: 9.5, fontWeight: 800, color: '#1e1b18' }}>Founder Execution Score</span>
+                  </div>
+                  <div style={{ fontSize: 16, fontWeight: 900, color: '#1e1b18', marginTop: 2 }}>
+                    {data.execution?.founderExecutionScore || 82}%
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* ══════════════════════════════════════════════════════════
+              ROW 4 (Height: ~28%): 3 Cards
+              Top Wins | Critical Blockers | Startup Value Spotlight
+             ══════════════════════════════════════════════════════════ */}
+          <div
+            style={{
+              height: '28%',
+              minHeight: 0,
+              display: 'grid',
+              gridTemplateColumns: '1.05fr 1.15fr 1.25fr',
+              gap: 9,
+            }}
+          >
+            {/* Card 4.1: Top Wins This Week */}
+            <div style={{ ...cardStyle, position: 'relative' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, zIndex: 1 }}>
+                <Trophy style={{ width: 14, height: 14, color: '#9e1820' }} />
+                <span style={{ fontSize: 11, fontWeight: 800, color: '#1e1b18' }}>Top Wins This Week</span>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 5, zIndex: 1, margin: '4px 0' }}>
+                {(data.highlights?.topWins || [
+                  'Revenue crossed ₹7.2L',
+                  '4/5 priorities completed',
+                  'Lead generation reached 840',
+                ]).slice(0, 3).map((win, idx) => (
+                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 10, fontWeight: 600, color: '#1e1b18' }}>
                     <span
                       style={{
-                        width: 15,
-                        height: 15,
+                        width: 16,
+                        height: 16,
                         borderRadius: '50%',
-                        background: '#ca2f2b',
+                        background: '#9e1820',
                         color: '#ffffff',
                         display: 'flex',
                         alignItems: 'center',
                         justifyContent: 'center',
-                        fontSize: 8.5,
+                        fontSize: 9,
                         fontWeight: 900,
                         flexShrink: 0,
                       }}
@@ -1016,148 +1204,167 @@ export function CompanyTvDisplay({
                   </div>
                 ))}
               </div>
+
+              {/* Elegant Calligraphy Handwriting Watermark */}
               <div
                 style={{
                   position: 'absolute',
-                  right: 8,
+                  right: 10,
                   bottom: 2,
-                  opacity: 0.18,
-                  pointerEvents: 'none',
-                  color: '#ca2f2b',
-                  fontFamily: 'serif',
-                  fontStyle: 'italic',
-                  fontSize: 15,
+                  color: '#9e1820',
+                  fontFamily: "'Caveat', cursive, sans-serif",
+                  fontSize: 26,
                   fontWeight: 700,
-                  transform: 'rotate(-4deg)',
+                  transform: 'rotate(-5deg)',
+                  opacity: 0.38,
+                  pointerEvents: 'none',
                 }}
               >
                 Small Steps Brighter Days
               </div>
             </div>
 
-            {/* Card 14: Critical Blockers & Resolution */}
+            {/* Card 4.2: Critical Blockers */}
             <div style={{ ...cardStyle, position: 'relative' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 2 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                  <AlertCircle style={{ width: 13, height: 13, color: '#ca2f2b' }} />
-                  <span style={{ fontSize: 10.5, fontWeight: 800, color: '#1e1b18' }}>Critical Blockers</span>
-                </div>
-                <span style={{ fontSize: 8.5, color: '#ca2f2b', fontWeight: 800, background: '#fdf2f2', padding: '1px 5px', borderRadius: 4 }}>
-                  {data.execution?.criticalBlockersCount || 2} Active
-                </span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, zIndex: 1 }}>
+                <AlertCircle style={{ width: 14, height: 14, color: '#9e1820' }} />
+                <span style={{ fontSize: 11, fontWeight: 800, color: '#1e1b18' }}>Critical Blockers</span>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, zIndex: 1, justifyContent: 'space-around', flex: 1 }}>
-                {(data.activeBlockersList && data.activeBlockersList.length > 0
-                  ? data.activeBlockersList
-                  : (data.highlights?.criticalBlockers || []).map((b, i) => ({
-                      id: `b-${i}`,
-                      title: b,
-                      owner: i === 0 ? 'Operations Lead' : 'Growth Lead',
-                      urgency: 'HIGH' as const,
-                    }))
-                )
-                  .slice(0, 2)
-                  .map((blocker, idx) => (
-                    <div key={blocker.id || idx} style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 9.5, fontWeight: 600, color: '#1e1b18' }}>
-                        <span
-                          style={{
-                            width: 14,
-                            height: 14,
-                            borderRadius: '50%',
-                            background: '#ca2f2b',
-                            color: '#ffffff',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: 8,
-                            fontWeight: 900,
-                            flexShrink: 0,
-                          }}
-                        >
-                          {idx + 1}
-                        </span>
-                        <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', flex: 1 }}>
-                          {blocker.title}
-                        </span>
-                        <span style={{ fontSize: 7.5, fontWeight: 800, background: '#fee2e2', color: '#991b1b', padding: '1px 4px', borderRadius: 3 }}>
-                          {blocker.urgency || 'HIGH'}
-                        </span>
-                      </div>
-                      <div style={{ fontSize: 8, color: '#78716c', marginLeft: 20 }}>
-                        Owner: {blocker.owner} • P1 Resolution Track
-                      </div>
-                    </div>
-                  ))}
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, zIndex: 1, margin: '4px 0' }}>
+                {(data.highlights?.criticalBlockers || [
+                  'Packaging vendor delay',
+                  'Performance ad creative refresh needed',
+                ]).slice(0, 2).map((blocker, idx) => (
+                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 7, fontSize: 10, fontWeight: 600, color: '#1e1b18' }}>
+                    <span
+                      style={{
+                        width: 16,
+                        height: 16,
+                        borderRadius: '50%',
+                        background: '#9e1820',
+                        color: '#ffffff',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        fontSize: 9,
+                        fontWeight: 900,
+                        flexShrink: 0,
+                      }}
+                    >
+                      {idx + 1}
+                    </span>
+                    <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{blocker}</span>
+                  </div>
+                ))}
               </div>
+
+              {/* Elegant Calligraphy Handwriting Watermark */}
               <div
                 style={{
                   position: 'absolute',
-                  right: 8,
+                  right: 12,
                   bottom: 2,
-                  opacity: 0.18,
-                  pointerEvents: 'none',
-                  color: '#ca2f2b',
-                  fontFamily: 'serif',
-                  fontStyle: 'italic',
-                  fontSize: 15,
+                  color: '#9e1820',
+                  fontFamily: "'Caveat', cursive, sans-serif",
+                  fontSize: 26,
                   fontWeight: 700,
-                  transform: 'rotate(-4deg)',
+                  transform: 'rotate(-5deg)',
+                  opacity: 0.38,
+                  pointerEvents: 'none',
                 }}
               >
                 Solve Scale Shine
               </div>
             </div>
 
-            {/* Card 15: Startup Value Spotlight */}
-            <div style={{ ...cardStyle, padding: '7px 11px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 2 }}>
-                <Gem style={{ width: 12, height: 12, color: '#ca2f2b' }} />
-                <span style={{ fontSize: 9.5, fontWeight: 900, color: '#ca2f2b', letterSpacing: '0.8px', textTransform: 'uppercase' }}>
+            {/* Card 4.3: STARTUP VALUE SPOTLIGHT */}
+            <div style={{ ...cardStyle, padding: '9px 12px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <Gem style={{ width: 13, height: 13, color: '#9e1820' }} />
+                <span
+                  style={{
+                    fontSize: 10,
+                    fontWeight: 900,
+                    color: '#9e1820',
+                    letterSpacing: '0.8px',
+                    textTransform: 'uppercase',
+                  }}
+                >
                   STARTUP VALUE SPOTLIGHT
                 </span>
               </div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 3, flex: 1, justifyContent: 'center' }}>
-                {(data.highlights?.valueSpotlight?.items || []).map((item, idx) => (
-                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 5, fontSize: 9, fontWeight: 600, color: '#1e1b18' }}>
-                    <div style={{ width: 13, height: 13, borderRadius: '50%', background: '#ca2f2b', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                      <Check style={{ width: 8, height: 8, color: '#ffffff', strokeWidth: 3 }} />
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, margin: '2px 0' }}>
+                {(data.highlights?.valueSpotlight?.items || [
+                  'Science-led skincare',
+                  'Barrier-first routines',
+                  'High repeat-purchase potential',
+                ]).map((item, idx) => (
+                  <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 9.5, fontWeight: 600, color: '#1e1b18' }}>
+                    <div
+                      style={{
+                        width: 14,
+                        height: 14,
+                        borderRadius: '50%',
+                        background: '#9e1820',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <Check style={{ width: 9, height: 9, color: '#ffffff', strokeWidth: 3 }} />
                     </div>
                     <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item}</span>
                   </div>
                 ))}
               </div>
+
+              {/* Bottom Solid Crimson Pill Banner */}
               <div
                 style={{
-                  marginTop: 2,
-                  padding: '4px 8px',
+                  background: '#9e1820',
                   borderRadius: 100,
-                  background: '#ca2f2b',
-                  color: '#ffffff',
+                  padding: '5px 12px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'space-between',
-                  fontSize: 9,
-                  fontWeight: 800,
+                  color: '#ffffff',
                 }}
               >
-                <span>{data.highlights?.valueSpotlight?.bannerText || 'Brand built for repeat trust.'}</span>
-                <div style={{ width: 13, height: 13, borderRadius: '50%', background: '#ffffff', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  <ArrowRight style={{ width: 8, height: 8, color: '#ca2f2b', strokeWidth: 3 }} />
+                <span style={{ fontSize: 9.5, fontWeight: 800, letterSpacing: '0.3px' }}>
+                  {data.highlights?.valueSpotlight?.bannerText || 'Brand built for repeat trust.'}
+                </span>
+                <div
+                  style={{
+                    width: 16,
+                    height: 16,
+                    borderRadius: '50%',
+                    background: '#ffffff',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}
+                >
+                  <ArrowRight style={{ width: 9, height: 9, color: '#9e1820', strokeWidth: 3 }} />
                 </div>
               </div>
             </div>
           </div>
         </div>
 
-        {/* ── RIGHT AREA: FOUNDER OF THE WEEK (Balanced, Rich Trophy Showcase) ── */}
+        {/* ══════════════════════════════════════════════════════════
+            RIGHT COLUMN: FOUNDER OF THE WEEK HERO PLAQUE (Full Height)
+           ══════════════════════════════════════════════════════════ */}
         <div
           style={{
-            background: 'linear-gradient(180deg, #781014 0%, #b81c22 45%, #59090c 100%)',
-            borderRadius: 14,
-            border: '1px solid rgba(255, 255, 255, 0.18)',
-            boxShadow: '0 8px 24px rgba(120, 16, 20, 0.35)',
-            padding: '12px 12px',
+            height: '100%',
+            background: 'linear-gradient(180deg, #6c0d12 0%, #9e1820 40%, #4a070a 100%)',
+            borderRadius: 16,
+            border: '1px solid rgba(255, 230, 200, 0.25)',
+            boxShadow: '0 12px 36px rgba(108, 13, 18, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2)',
+            padding: '16px 14px 14px 14px',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -1168,21 +1375,39 @@ export function CompanyTvDisplay({
             overflow: 'hidden',
           }}
         >
-          {/* Header */}
+          {/* Subtle Golden Ambient Glow Behind Laurel */}
+          <div
+            style={{
+              position: 'absolute',
+              top: '25%',
+              width: 170,
+              height: 170,
+              borderRadius: '50%',
+              background: 'radial-gradient(circle, rgba(246, 213, 133, 0.3) 0%, rgba(246, 213, 133, 0.05) 55%, transparent 70%)',
+              pointerEvents: 'none',
+            }}
+          />
+
+          {/* Top Title */}
           <div>
-            <div style={{ fontSize: 11.5, fontWeight: 900, letterSpacing: '1.8px', color: '#fce7b2', textTransform: 'uppercase' }}>
+            <div
+              style={{
+                fontSize: 13,
+                fontWeight: 900,
+                letterSpacing: '2px',
+                color: '#ffffff',
+                textTransform: 'uppercase',
+              }}
+            >
               FOUNDER OF THE WEEK
-            </div>
-            <div style={{ fontSize: 8.5, color: 'rgba(254, 226, 226, 0.8)', marginTop: 1 }}>
-              STUDIO RECOGNITION PLACEMENT
             </div>
           </div>
 
-          {/* Hero Laurel Wreath with Avatar */}
-          <div style={{ position: 'relative', margin: '4px 0', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-            <div style={{ position: 'relative', width: 116, height: 116, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              {/* Laurel Wreath SVG */}
-              <svg width="116" height="116" viewBox="0 0 140 140" fill="none" style={{ position: 'absolute', inset: 0 }}>
+          {/* Golden Laurel Wreath + Circular Silhouette Portrait */}
+          <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div style={{ position: 'relative', width: 140, height: 140, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              {/* Detailed Golden Laurel Wreath SVG */}
+              <svg width="140" height="140" viewBox="0 0 140 140" fill="none" style={{ position: 'absolute', inset: 0 }}>
                 {/* Left Laurel Branch */}
                 <path d="M42 110 C25 90 22 55 46 28" stroke="#f6d585" strokeWidth="2.5" strokeLinecap="round" />
                 <path d="M42 100 C30 92 34 82 40 86" fill="#f6d585" />
@@ -1200,131 +1425,141 @@ export function CompanyTvDisplay({
                 <path d="M104 38 C110 30 102 20 95 25" fill="#f6d585" />
               </svg>
 
-              {/* Founder Avatar Circle */}
+              {/* Founder Circular Silhouette Portrait Frame */}
               <div
                 style={{
-                  width: 68,
-                  height: 68,
+                  width: 86,
+                  height: 86,
                   borderRadius: '50%',
-                  background: 'radial-gradient(circle, #f87171 0%, #450a0a 100%)',
+                  background: 'radial-gradient(circle, #3d070b 0%, #150203 100%)',
                   border: '2.5px solid #f6d585',
-                  boxShadow: '0 0 16px rgba(246, 213, 133, 0.4)',
+                  boxShadow: '0 0 20px rgba(246, 213, 133, 0.45)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   overflow: 'hidden',
                 }}
               >
-                <Users2 style={{ width: 36, height: 36, color: '#fef2f2', opacity: 0.9 }} />
+                {/* Stylized Founder Silhouette with Subtle Lighting */}
+                <svg width="58" height="68" viewBox="0 0 58 68" fill="none">
+                  {/* Head */}
+                  <circle cx="29" cy="22" r="14" fill="#fce7b2" fillOpacity="0.85" />
+                  {/* Shoulders */}
+                  <path
+                    d="M8 68 C8 46 16 40 29 40 C42 40 50 46 50 68 Z"
+                    fill="#fce7b2"
+                    fillOpacity="0.85"
+                  />
+                </svg>
               </div>
             </div>
 
-            {/* Golden Champion Ribbon Banner */}
+            {/* 3D Folded Metallic Golden Ribbon */}
             <div
               style={{
-                marginTop: -10,
-                background: 'linear-gradient(90deg, #d97706 0%, #f59e0b 50%, #d97706 100%)',
-                color: '#ffffff',
-                padding: '3.5px 11px',
-                borderRadius: 4,
-                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.35)',
-                fontSize: 9,
-                fontWeight: 900,
-                letterSpacing: '0.8px',
-                textTransform: 'uppercase',
-                border: '1px solid #fef08a',
+                marginTop: -16,
                 position: 'relative',
-                zIndex: 2,
+                zIndex: 5,
+                background: 'linear-gradient(180deg, #ffeaa7 0%, #f6c85f 40%, #df9a26 100%)',
+                color: '#730e13',
+                padding: '4px 14px',
+                borderRadius: 4,
+                boxShadow: '0 4px 14px rgba(0, 0, 0, 0.35)',
+                border: '1px solid #fff5cc',
+                fontSize: 10,
+                fontWeight: 900,
+                letterSpacing: '1px',
+                textTransform: 'uppercase',
+                textShadow: '0 1px 0 rgba(255, 255, 255, 0.6)',
               }}
             >
               {data.founderOfTheWeek?.award || 'CHAMPIONING PROGRESS'}
             </div>
           </div>
 
-          {/* Founder Identity */}
-          <div style={{ margin: '2px 0' }}>
-            <div style={{ fontSize: 13, fontWeight: 900, color: '#ffffff' }}>
-              {data.founderOfTheWeek?.name || 'Rohan Mehta'}
-            </div>
-            <div style={{ fontSize: 9, color: '#fce7b2', fontWeight: 700 }}>
-              {data.startup.name} • {data.sector || 'Portfolio Startup'}
-            </div>
-          </div>
-
-          {/* Citation */}
-          <div style={{ fontSize: 9.5, color: '#fee2e2', lineHeight: 1.35, margin: '4px 2px', fontStyle: 'italic' }}>
+          {/* Citation Text */}
+          <div
+            style={{
+              fontSize: 11,
+              color: '#ffe6cf',
+              fontStyle: 'italic',
+              fontFamily: 'var(--font-serif)',
+              lineHeight: 1.4,
+              padding: '0 8px',
+            }}
+          >
             &ldquo;{data.founderOfTheWeek?.citation || 'Recognised for strongest weekly execution and milestone progress.'}&rdquo;
           </div>
 
-          {/* Recognition Achievements List (Eliminating Empty Space!) */}
-          <div
-            style={{
-              width: '100%',
-              background: 'rgba(0, 0, 0, 0.2)',
-              borderRadius: 8,
-              padding: '6px 8px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 3.5,
-              textAlign: 'left',
-              border: '1px solid rgba(252, 231, 178, 0.18)',
-            }}
-          >
-            <div style={{ fontSize: 8, fontWeight: 800, color: '#fce7b2', textTransform: 'uppercase', letterSpacing: '0.6px' }}>
-              Sprint Achievements
+          {/* Golden Hairline Divider with Diamond */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6, width: '70%' }}>
+            <div style={{ flex: 1, height: 1, background: 'rgba(246, 213, 133, 0.35)' }} />
+            <span style={{ color: '#f6d585', fontSize: 9 }}>✦</span>
+            <div style={{ flex: 1, height: 1, background: 'rgba(246, 213, 133, 0.35)' }} />
+          </div>
+
+          {/* Bottom Motto */}
+          <div>
+            <div
+              style={{
+                fontSize: 9.5,
+                fontWeight: 900,
+                letterSpacing: '1.8px',
+                color: '#f6d585',
+                textTransform: 'uppercase',
+                lineHeight: 1.35,
+              }}
+            >
+              BOLDER FOUNDERS
             </div>
-            {(data.founderOfTheWeek?.achievements || [
-              `${data.priorities?.rate || 80}% Weekly Sprint Completion`,
-              'Fastest Resolution of Critical Blockers',
-              'Strongest Functional Domain Velocity',
-            ]).map((ach, idx) => (
-              <div key={idx} style={{ fontSize: 8.5, color: '#ffffff', display: 'flex', alignItems: 'center', gap: 4 }}>
-                <span style={{ color: '#f6d585', fontSize: 9 }}>★</span>
-                <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{ach}</span>
-              </div>
-            ))}
-          </div>
-
-          {/* Golden Divider */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6, width: '70%', margin: '2px 0' }}>
-            <div style={{ flex: 1, height: 1, background: 'rgba(252, 231, 178, 0.35)' }} />
-            <span style={{ color: '#fce7b2', fontSize: 8.5 }}>✦</span>
-            <div style={{ flex: 1, height: 1, background: 'rgba(252, 231, 178, 0.35)' }} />
-          </div>
-
-          {/* Footer Tagline */}
-          <div style={{ fontSize: 8.5, fontWeight: 900, letterSpacing: '1px', color: '#fce7b2', textTransform: 'uppercase' }}>
-            {data.founderOfTheWeek?.tagline || 'BOLDER FOUNDERS BRIGHTER TOMORROW'}
+            <div
+              style={{
+                fontSize: 9.5,
+                fontWeight: 900,
+                letterSpacing: '1.8px',
+                color: '#f6d585',
+                textTransform: 'uppercase',
+                lineHeight: 1.35,
+              }}
+            >
+              BRIGHTER TOMORROW
+            </div>
           </div>
         </div>
       </main>
 
-      {/* ── BOTTOM FOOTER STRIP ── */}
+      {/* ── FOOTER (FULL WIDTH, CLEAN TYPOGRAPHY) ── */}
       <footer
         style={{
-          height: 22,
+          height: 24,
           flexShrink: 0,
-          borderTop: '1px solid rgba(202, 47, 43, 0.1)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           fontSize: 9,
           fontWeight: 800,
           letterSpacing: '1px',
-          color: '#8c8375',
+          color: '#736b5e',
           textTransform: 'uppercase',
           padding: '0 4px',
+          borderTop: '1px solid rgba(158, 24, 32, 0.12)',
+          zIndex: 10,
         }}
       >
         <div>
-          <span style={{ color: '#ca2f2b', fontWeight: 900 }}>DAYONE</span>
+          <span style={{ color: '#9e1820', fontWeight: 900 }}>DAYONE</span>
           <span style={{ margin: '0 8px', opacity: 0.5 }}>|</span>
-          <span>{allStartups.length > 0 ? `${allStartups.length} STARTUPS` : 'SEVEN STARTUPS'}</span>
+          <span>SEVEN STARTUPS</span>
           <span style={{ margin: '0 8px', opacity: 0.5 }}>|</span>
           <span>ONE OPERATING SYSTEM</span>
         </div>
 
-        <div style={{ color: '#ca2f2b', fontSize: 10 }}>✦</div>
+        {/* Center Star with Hairline Rules */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, width: '22%' }}>
+          <div style={{ flex: 1, height: 1, background: '#ded6c1' }} />
+          <span style={{ color: '#9e1820', fontSize: 11 }}>✦</span>
+          <div style={{ flex: 1, height: 1, background: '#ded6c1' }} />
+        </div>
 
         <div>
           <span>PEOPLE</span>
