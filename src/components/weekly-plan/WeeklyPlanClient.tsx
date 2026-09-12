@@ -6,11 +6,18 @@ import type { ActionState, WeeklyPlan, Domain, Task } from '@/types'
 import { createTask, updateTaskStatus } from '@/features/tasks/actions'
 import { DomainSelectWithQuickAdd } from '@/components/domains/DomainSelectWithQuickAdd'
 
+interface StaffMemberEntry {
+  user_id: string
+  role?: string
+  profile: { id: string; full_name: string; email?: string | null } | null
+}
+
 interface Props {
   startupId: string
   currentPlan: WeeklyPlan | null
   domains: Domain[]
   tasks: Task[]
+  staffMembers?: StaffMemberEntry[]
 }
 
 function getMonday(date: Date): Date {
@@ -25,7 +32,7 @@ function toDateStr(date: Date): string {
   return date.toISOString().split('T')[0]
 }
 
-export function WeeklyPlanClient({ startupId, currentPlan, domains, tasks }: Props) {
+export function WeeklyPlanClient({ startupId, currentPlan, domains, tasks, staffMembers = [] }: Props) {
   const [createPlanState, createPlanAction, createPlanPending] = useActionState<ActionState, FormData>(createWeeklyPlan, {})
   const [updatePlanState, updatePlanAction, updatePlanPending] = useActionState<ActionState, FormData>(updateWeeklyPlan, {})
   const [createTaskState, createTaskAction, createTaskPending] = useActionState<ActionState, FormData>(createTask, {})
@@ -165,9 +172,22 @@ export function WeeklyPlanClient({ startupId, currentPlan, domains, tasks }: Pro
                     </select>
                   </div>
                 </div>
-                <div className="form-group">
-                  <label className="label">Due Date</label>
-                  <input name="due_date" type="date" className="input" min={currentPlan.week_start} max={currentPlan.week_end} />
+                <div className="grid-2">
+                  <div className="form-group">
+                    <label className="label">Due Date</label>
+                    <input name="due_date" type="date" className="input" min={currentPlan.week_start} max={currentPlan.week_end} />
+                  </div>
+                  <div className="form-group">
+                    <label className="label">Assign To</label>
+                    <select name="assigned_to" className="input">
+                      <option value="">Unassigned</option>
+                      {staffMembers.map((m) => m.profile && (
+                        <option key={m.user_id} value={m.user_id}>
+                          {m.profile.full_name} {m.profile.email ? `(${m.profile.email})` : ''}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
                 <div className="form-group">
                   <label className="label">Description</label>

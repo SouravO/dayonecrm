@@ -169,15 +169,22 @@ export function TasksClient({
               </div>
             </div>
 
-            {isFounder && staffMembers.length > 0 && (
+            {isFounder && (
               <div className="form-group">
                 <label className="label">Assign To</label>
                 <select name="assigned_to" className="input">
                   <option value="">Unassigned</option>
                   {staffMembers.map((m) => m.profile && (
-                    <option key={m.user_id} value={m.user_id}>{m.profile.full_name}</option>
+                    <option key={m.user_id} value={m.user_id}>
+                      {m.profile.full_name}
+                    </option>
                   ))}
                 </select>
+                {staffMembers.length === 0 && (
+                  <span style={{ fontSize: 11.5, color: 'var(--color-text-muted)', marginTop: 4, display: 'block' }}>
+                    No staff members added yet. You can assign tasks after adding staff in the Staff page.
+                  </span>
+                )}
               </div>
             )}
 

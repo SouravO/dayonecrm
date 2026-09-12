@@ -21,7 +21,7 @@ export default async function WeeklyPlanPage() {
 
   const today = new Date().toISOString().split('T')[0]
 
-  const [{ data: currentPlan }, { data: domains }] = await Promise.all([
+  const [{ data: currentPlan }, { data: domains }, { data: staff }] = await Promise.all([
     supabase
       .from('weekly_plans')
       .select('*')
@@ -30,6 +30,11 @@ export default async function WeeklyPlanPage() {
       .gte('week_end', today)
       .single(),
     supabase.from('domains').select('*').eq('startup_id', startupId),
+    supabase
+      .from('startup_members')
+      .select('user_id, role, profile:profiles(id, full_name, email)')
+      .eq('startup_id', startupId)
+      .order('created_at', { ascending: true }),
   ])
 
   const { data: tasks } = currentPlan
@@ -53,6 +58,7 @@ export default async function WeeklyPlanPage() {
         currentPlan={currentPlan}
         domains={domains || []}
         tasks={tasks || []}
+        staffMembers={(staff as any) || []}
       />
     </div>
   )
