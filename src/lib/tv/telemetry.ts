@@ -1,4 +1,5 @@
 import { getAdminClient } from '@/lib/supabase/admin'
+import { calculateTeamPerformance } from '@/lib/performance/calculateMemberPerformance'
 
 export interface CriticalBlockerItem {
   id: string
@@ -142,6 +143,19 @@ export interface TvPayload {
     dueDate: string | null
   }>
   recentActivity: Array<{ id: string; action: string; time: string }>
+  teamPerformance?: MemberPerformanceTelemetry[]
+}
+
+export interface MemberPerformanceTelemetry {
+  userId: string
+  name: string
+  role?: string
+  totalTasks: number
+  completedTasks: number
+  inProgressTasks: number
+  completionRate: number
+  performanceScore: number
+  status: string
 }
 
 export interface TvStartupSummary {
@@ -671,11 +685,17 @@ export async function getTvTelemetry(idOrSlug: string): Promise<TvPayload | null
     assigneeName: t.assigned_to ? profileMap.get(t.assigned_to) || 'Operator' : 'Unassigned',
   }))
 
-  // 5. Fetch Staff count
-  const { count: staffCount } = await supabase
-    .from('startup_members')
-    .select('*', { count: 'exact', head: true })
-    .eq('startup_id', startupId)
+  // 5. Fetch Staff members with profiles
+  const [{ count: staffCount }, { data: startupMembers }] = await Promise.all([
+    supabase
+      .from('startup_members')
+      .select('*', { count: 'exact', head: true })
+      .eq('startup_id', startupId),
+    supabase
+      .from('startup_members')
+      .select('user_id, role, profile:profiles(id, full_name, email)')
+      .eq('startup_id', startupId),
+  ])
 
   // 6. Fetch Recent Activity Logs
   const { data: activities } = await supabase
@@ -1101,6 +1121,20 @@ export async function getTvTelemetry(idOrSlug: string): Promise<TvPayload | null
       id: a.id,
       action: a.action,
       time: a.created_at,
+    })),
+    teamPerformance: calculateTeamPerformance(
+      (rawTasks as any) || [],
+      (startupMembers as any) || []
+    ).map((m) => ({
+      userId: m.userId,
+      name: m.fullName,
+      role: m.role,
+      totalTasks: m.totalTasks,
+      completedTasks: m.completedTasks,
+      inProgressTasks: m.inProgressTasks,
+      completionRate: m.completionRate,
+      performanceScore: m.performanceScore,
+      status: m.status,
     })),
   }
 }

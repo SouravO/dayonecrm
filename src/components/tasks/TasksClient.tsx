@@ -19,6 +19,7 @@ interface Props {
   weeklyPlans: Pick<WeeklyPlan, 'id' | 'week_start' | 'week_end' | 'title' | 'goal'>[]
   staffMembers: StaffMemberEntry[]
   isFounder?: boolean
+  isStaff?: boolean
   currentUserId?: string
   currentPlanId?: string
 }
@@ -30,9 +31,13 @@ export function TasksClient({
   weeklyPlans,
   staffMembers,
   isFounder = false,
+  isStaff = false,
   currentUserId,
   currentPlanId,
 }: Props) {
+  const canCreateTask = isFounder || isStaff
+  const canEditTask = (task: Task) => isFounder || (isStaff && task.created_by === currentUserId)
+  const canDeleteTask = isFounder
   const [createState, createAction, createPending] = useActionState<ActionState, FormData>(createTask, {})
   const [statusState, statusAction, statusPending] = useActionState<ActionState, FormData>(updateTaskStatus, {})
   const [deleteState, deleteAction, deletePending] = useActionState<ActionState, FormData>(deleteTask, {})
@@ -116,21 +121,24 @@ export function TasksClient({
           ))}
         </select>
         <div style={{ flex: 1 }} />
-        <button
-          onClick={() => setShowCreateForm(!showCreateForm)}
-          className="btn btn-primary"
-        >
-          {showCreateForm ? '✕ Cancel' : '+ New Task'}
-        </button>
+        {canCreateTask && (
+          <button
+            onClick={() => setShowCreateForm(!showCreateForm)}
+            className="btn btn-primary"
+          >
+            {showCreateForm ? '✕ Cancel' : '+ New Task'}
+          </button>
+        )}
       </div>
 
       {/* Create form */}
-      {showCreateForm && (
+      {showCreateForm && canCreateTask && (
         <div className="card" style={{ marginBottom: 24, borderColor: 'var(--color-brand)' }}>
           <h3 style={{ fontSize: 15, fontWeight: 700, marginBottom: 16 }}>Create Task</h3>
           <form action={createAction} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
             <input type="hidden" name="startup_id" value={startupId} />
-            {currentPlanId && <input type="hidden" name="weekly_plan_id" value={currentPlanId} />}
+            {!isFounder && currentPlanId && <input type="hidden" name="weekly_plan_id" value={currentPlanId} />}
+            {isStaff && currentUserId && <input type="hidden" name="self_assign" value="true" />}
 
             <div className="form-group">
               <label className="label">Title *</label>
@@ -156,7 +164,7 @@ export function TasksClient({
               {isFounder && (
                 <div className="form-group">
                   <label className="label">Weekly Plan</label>
-                  <select name="weekly_plan_id" className="input">
+                  <select name="weekly_plan_id" defaultValue={currentPlanId || ''} className="input">
                     <option value="">None</option>
                     {weeklyPlans.map((p) => {
                       const startStr = new Date(p.week_start + 'T00:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
@@ -261,7 +269,7 @@ export function TasksClient({
                   </div>
 
                   <div style={{ display: 'flex', gap: 6, flexShrink: 0, alignItems: 'center' }}>
-                    {isFounder && (
+                    {canEditTask(task) && (
                       <button
                         type="button"
                         onClick={() => setEditingTask(task)}
@@ -285,7 +293,7 @@ export function TasksClient({
                         </button>
                       </form>
                     )}
-                    {isFounder && (
+                    {canDeleteTask && (
                       <form action={deleteAction}>
                         <input type="hidden" name="id" value={task.id} />
                         <button type="submit" className="btn btn-ghost btn-sm btn-icon" disabled={deletePending} style={{ color: 'var(--color-danger)' }} title="Delete task">

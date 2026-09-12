@@ -77,9 +77,14 @@ export default async function StaffDashboard() {
           <h1 className="page-title">Hey, {session!.full_name.split(' ')[0]} 👋</h1>
           <p className="page-subtitle">Here&apos;s your deliverables and sprint progress</p>
         </div>
-        <Link href="/staff/tasks" className="btn btn-primary">
-          View All Tasks
-        </Link>
+        <div style={{ display: 'flex', gap: 8 }}>
+          <Link href="/staff/tasks" className="btn btn-secondary">
+            View All Tasks
+          </Link>
+          <Link href="/staff/tasks?create=1" className="btn btn-primary">
+            + Add Task
+          </Link>
+        </div>
       </div>
 
       {/* Stats */}

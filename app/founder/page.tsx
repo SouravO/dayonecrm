@@ -22,9 +22,21 @@ import {
   ListTodo,
   Sparkles,
   MonitorPlay,
+  ShieldAlert,
+  Activity,
+  AlertCircle,
+  Clock4,
+  CheckCircle,
+  AlertOctagon,
+  ArrowRight,
+  Award,
+  BarChart3,
 } from 'lucide-react'
 import { CompanyLogo } from '@/components/brand/CompanyLogo'
 import { FounderLogoManager } from '@/components/brand/FounderLogoManager'
+import { calculateStartupHealth } from '@/lib/performance/calculateStartupHealth'
+import { calculateTeamPerformance } from '@/lib/performance/calculateMemberPerformance'
+import type { Task, Domain } from '@/types'
 
 export const metadata: Metadata = { title: 'Founder Command Center — Day One' }
 
@@ -58,37 +70,64 @@ export default async function FounderDashboard() {
         .single()
     : { data: null }
 
-  // Get task counts
-  const { data: tasks } = startupId
-    ? await supabase.from('tasks').select('status, completion_status').eq('startup_id', startupId)
-    : { data: [] }
+  // Get full tasks, domains, and startup members in parallel
+  const [
+    { data: rawTasks },
+    { data: rawDomains },
+    { data: rawMembers },
+  ] = await Promise.all([
+    startupId
+      ? supabase
+          .from('tasks')
+          .select('*')
+          .eq('startup_id', startupId)
+          .order('created_at', { ascending: false })
+      : Promise.resolve({ data: [] }),
+    startupId
+      ? supabase
+          .from('domains')
+          .select('*')
+          .eq('startup_id', startupId)
+          .order('name', { ascending: true })
+      : Promise.resolve({ data: [] }),
+    startupId
+      ? supabase
+          .from('startup_members')
+          .select('user_id, role, profile:profiles(id, full_name, email)')
+          .eq('startup_id', startupId)
+      : Promise.resolve({ data: [] }),
+  ])
+
+  const allTasks = (rawTasks as Task[]) || []
+  const domains = (rawDomains as Domain[]) || []
+  const members = (rawMembers as any[]) || []
+
+  // Build profile name lookup map
+  const profileMap = new Map<string, string>()
+  members.forEach((m) => {
+    if (m.profile?.id && m.profile?.full_name) {
+      profileMap.set(m.profile.id, m.profile.full_name)
+    }
+  })
+
+  // Calculate Health & Critical Blockers
+  const health = calculateStartupHealth(allTasks, domains, profileMap)
+
+  // Calculate Team / Contributor Performance
+  const teamPerf = calculateTeamPerformance(allTasks, members)
 
   const taskStats = {
-    total: tasks?.length || 0,
-    done: tasks?.filter((t) => t.status === 'DONE').length || 0,
-    inProgress: tasks?.filter((t) => t.status === 'IN_PROGRESS').length || 0,
-    todo: tasks?.filter((t) => t.status === 'TODO').length || 0,
-    early: tasks?.filter((t) => t.completion_status === 'EARLY').length || 0,
-    onTime: tasks?.filter((t) => t.completion_status === 'ON_TIME').length || 0,
-    late: tasks?.filter((t) => t.completion_status === 'LATE').length || 0,
+    total: allTasks.length,
+    done: allTasks.filter((t) => t.status === 'DONE').length,
+    inProgress: allTasks.filter((t) => t.status === 'IN_PROGRESS').length,
+    todo: allTasks.filter((t) => t.status === 'TODO').length,
+    early: allTasks.filter((t) => t.completion_status === 'EARLY').length,
+    onTime: allTasks.filter((t) => t.completion_status === 'ON_TIME').length,
+    late: allTasks.filter((t) => t.completion_status === 'LATE').length,
   }
 
-  // Get staff count
-  const { count: staffCount } = startupId
-    ? await supabase
-        .from('startup_members')
-        .select('*', { count: 'exact', head: true })
-        .eq('startup_id', startupId)
-        .eq('role', 'STAFF')
-    : { count: 0 }
-
-  // Get domains count
-  const { count: domainCount } = startupId
-    ? await supabase
-        .from('domains')
-        .select('*', { count: 'exact', head: true })
-        .eq('startup_id', startupId)
-    : { count: 0 }
+  const staffCount = members.filter((m) => m.role === 'STAFF').length
+  const domainCount = domains.length
 
   const completionRate =
     taskStats.total > 0 ? Math.round((taskStats.done / taskStats.total) * 100) : 0
@@ -299,6 +338,394 @@ export default async function FounderDashboard() {
             )}
           </div>
         ))}
+      </div>
+
+      {/* ── Executive Health & Critical Blockers Diagnostic Grid ── */}
+      <div
+        style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))',
+          gap: 20,
+          marginBottom: 28,
+        }}
+      >
+        {/* Card 1: Venture Health & Pacing Index */}
+        <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              paddingBottom: 16,
+              borderBottom: '1px solid #ede7d3',
+              marginBottom: 18,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 8,
+                  background: 'rgba(202, 47, 43, 0.08)',
+                  border: '1px solid rgba(202, 47, 43, 0.16)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'var(--color-brand)',
+                }}
+              >
+                <Activity className="w-4 h-4" />
+              </div>
+              <div>
+                <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text-primary)' }}>
+                  Venture Health Score
+                </h2>
+                <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
+                  Live Execution Index
+                </div>
+              </div>
+            </div>
+
+            <span
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 5,
+                padding: '3px 10px',
+                borderRadius: 100,
+                fontSize: 11,
+                fontWeight: 700,
+                color: health.statusBadgeColor,
+                background: `${health.statusBadgeColor}15`,
+                border: `1px solid ${health.statusBadgeColor}35`,
+              }}
+            >
+              <span
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: '50%',
+                  background: health.statusBadgeColor,
+                }}
+              />
+              {health.status}
+            </span>
+          </div>
+
+          <div style={{ display: 'flex', alignItems: 'center', gap: 24, marginBottom: 20 }}>
+            {/* Big Health Number Gauge */}
+            <div
+              style={{
+                width: 96,
+                height: 96,
+                borderRadius: '50%',
+                background: `radial-gradient(circle, #ffffff 58%, ${health.statusBadgeColor}15 100%)`,
+                border: `3px solid ${health.statusBadgeColor}`,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                boxShadow: `0 4px 14px ${health.statusBadgeColor}20`,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 32,
+                  fontWeight: 800,
+                  color: health.statusBadgeColor,
+                  lineHeight: 1,
+                  letterSpacing: '-1px',
+                }}
+              >
+                {health.score}
+              </div>
+              <div
+                style={{
+                  fontSize: 10,
+                  fontWeight: 600,
+                  color: 'var(--color-text-muted)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.5px',
+                  marginTop: 3,
+                }}
+              >
+                Score / 100
+              </div>
+            </div>
+
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div style={{ fontSize: 13, color: 'var(--color-text-secondary)', lineHeight: 1.5, marginBottom: 10 }}>
+                {health.score >= 80
+                  ? 'Strong velocity and deliverable cadence. Team is meeting milestone targets with minimal impediment.'
+                  : health.score >= 60
+                  ? 'Operational pace is stable. Maintain vigilance on pending deliverables approaching target due dates.'
+                  : 'Execution lag detected. Immediate intervention required on overdue deliverables and blocked items.'}
+              </div>
+
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
+                  Overdue: <strong style={{ color: health.overdueTasks > 0 ? 'var(--color-danger)' : 'var(--color-text-primary)' }}>{health.overdueTasks}</strong>
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
+                  In Flight: <strong style={{ color: 'var(--color-info)' }}>{health.inProgressTasks}</strong>
+                </div>
+                <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
+                  Completion: <strong style={{ color: 'var(--color-success)' }}>{health.completionRate}%</strong>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Sub-scores breakdown bars */}
+          <div style={{ marginTop: 'auto', display: 'flex', flexDirection: 'column', gap: 8, paddingTop: 14, borderTop: '1px solid #ede7d3' }}>
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, marginBottom: 4 }}>
+                <span style={{ color: 'var(--color-text-secondary)', fontWeight: 500 }}>Velocity Index</span>
+                <span style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>{health.velocityScore} / 45</span>
+              </div>
+              <div className="progress-bar" style={{ height: 4 }}>
+                <div className="progress-fill progress-fill-brand" style={{ width: `${(health.velocityScore / 45) * 100}%` }} />
+              </div>
+            </div>
+
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, marginBottom: 4 }}>
+                <span style={{ color: 'var(--color-text-secondary)', fontWeight: 500 }}>Active Momentum</span>
+                <span style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>{health.momentumScore} / 35</span>
+              </div>
+              <div className="progress-bar" style={{ height: 4 }}>
+                <div className="progress-fill" style={{ width: `${(health.momentumScore / 35) * 100}%`, background: 'var(--color-info)' }} />
+              </div>
+            </div>
+
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 11.5, marginBottom: 4 }}>
+                <span style={{ color: 'var(--color-text-secondary)', fontWeight: 500 }}>Blocker Hygiene</span>
+                <span style={{ fontWeight: 600, color: health.blockerScore >= 15 ? 'var(--color-success)' : 'var(--color-danger)' }}>{health.blockerScore} / 20</span>
+              </div>
+              <div className="progress-bar" style={{ height: 4 }}>
+                <div
+                  className="progress-fill"
+                  style={{
+                    width: `${(health.blockerScore / 20) * 100}%`,
+                    background: health.blockerScore >= 15 ? 'var(--color-success)' : 'var(--color-danger)',
+                  }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Card 2: Critical Blockers & Lagging Areas */}
+        <div className="card" style={{ display: 'flex', flexDirection: 'column' }}>
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              paddingBottom: 16,
+              borderBottom: '1px solid #ede7d3',
+              marginBottom: 18,
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <div
+                style={{
+                  width: 32,
+                  height: 32,
+                  borderRadius: 8,
+                  background: health.blockers.length > 0 ? 'rgba(202, 47, 43, 0.08)' : 'rgba(5, 150, 105, 0.08)',
+                  border: `1px solid ${health.blockers.length > 0 ? 'rgba(202, 47, 43, 0.16)' : 'rgba(5, 150, 105, 0.16)'}`,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: health.blockers.length > 0 ? 'var(--color-danger)' : 'var(--color-success)',
+                }}
+              >
+                {health.blockers.length > 0 ? <AlertTriangle className="w-4 h-4" /> : <CheckCircle className="w-4 h-4" />}
+              </div>
+              <div>
+                <h2 style={{ fontSize: 15, fontWeight: 700, color: 'var(--color-text-primary)' }}>
+                  Critical Blockers & Lag
+                </h2>
+                <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
+                  Where & Which Work is Stalled
+                </div>
+              </div>
+            </div>
+
+            <span
+              className={`badge ${health.blockers.length > 0 ? 'badge-danger' : 'badge-success'}`}
+              style={{ fontSize: 11 }}
+            >
+              {health.blockers.length} {health.blockers.length === 1 ? 'Blocker' : 'Blockers'}
+            </span>
+          </div>
+
+          {health.blockers.length === 0 ? (
+            <div
+              style={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '24px 16px',
+                textAlign: 'center',
+                background: '#fcfbfa',
+                border: '1px dashed #e2dbbe',
+                borderRadius: 10,
+              }}
+            >
+              <div
+                style={{
+                  width: 44,
+                  height: 44,
+                  borderRadius: '50%',
+                  background: '#ecfdf5',
+                  color: '#059669',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  marginBottom: 10,
+                }}
+              >
+                <CheckCircle className="w-6 h-6" />
+              </div>
+              <div style={{ fontSize: 14, fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: 4 }}>
+                Zero Blockers Detected
+              </div>
+              <p style={{ fontSize: 12.5, color: 'var(--color-text-secondary)', maxWidth: 280, margin: 0 }}>
+                All deliverables are tracking within their planned timelines with no overdue items.
+              </p>
+            </div>
+          ) : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 10, flex: 1 }}>
+              {health.blockers.slice(0, 4).map((b) => (
+                <div
+                  key={b.id}
+                  style={{
+                    padding: '10px 12px',
+                    borderRadius: 8,
+                    background: b.urgency === 'CRITICAL' ? '#fff5f5' : '#fffbeb',
+                    border: `1px solid ${b.urgency === 'CRITICAL' ? '#fecaca' : '#fde68a'}`,
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    justifyContent: 'space-between',
+                    gap: 10,
+                  }}
+                >
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3, flexWrap: 'wrap' }}>
+                      <span
+                        style={{
+                          fontSize: 9.5,
+                          fontWeight: 700,
+                          padding: '1px 6px',
+                          borderRadius: 4,
+                          letterSpacing: '0.4px',
+                          background: b.urgency === 'CRITICAL' ? '#ca2f2b' : '#d97706',
+                          color: '#ffffff',
+                        }}
+                      >
+                        {b.urgency}
+                      </span>
+                      <span className="badge badge-neutral" style={{ fontSize: 10 }}>
+                        {b.domainName}
+                      </span>
+                      <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
+                        • {b.assigneeName}
+                      </span>
+                    </div>
+                    <div
+                      style={{
+                        fontSize: 13,
+                        fontWeight: 600,
+                        color: 'var(--color-text-primary)',
+                        marginBottom: 3,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      {b.title}
+                    </div>
+                    <div style={{ fontSize: 11.5, color: b.urgency === 'CRITICAL' ? '#991b1b' : '#92400e', fontWeight: 500 }}>
+                      ⚠️ {b.lagReason}
+                    </div>
+                  </div>
+
+                  <Link
+                    href="/founder/tasks"
+                    style={{
+                      fontSize: 11.5,
+                      fontWeight: 600,
+                      color: 'var(--color-brand)',
+                      textDecoration: 'none',
+                      whiteSpace: 'nowrap',
+                      padding: '4px 8px',
+                      borderRadius: 6,
+                      background: '#ffffff',
+                      border: '1px solid #e5dfcb',
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: 3,
+                    }}
+                  >
+                    <span>Resolve</span>
+                    <ArrowRight className="w-3 h-3" />
+                  </Link>
+                </div>
+              ))}
+
+              {health.blockers.length > 4 && (
+                <div style={{ textAlign: 'center', paddingTop: 4 }}>
+                  <Link
+                    href="/founder/tasks"
+                    style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-brand)', textDecoration: 'none' }}
+                  >
+                    +{health.blockers.length - 4} more blocked tasks → View all in Tasks
+                  </Link>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Lagging Domains Pill Summary */}
+          {health.domains.some((d) => d.isLagging) && (
+            <div style={{ marginTop: 14, paddingTop: 12, borderTop: '1px solid #ede7d3' }}>
+              <div style={{ fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px', color: 'var(--color-text-muted)', marginBottom: 8 }}>
+                Lagging Operational Pillars:
+              </div>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                {health.domains
+                  .filter((d) => d.isLagging)
+                  .map((ld) => (
+                    <span
+                      key={ld.id}
+                      style={{
+                        fontSize: 11,
+                        padding: '3px 8px',
+                        borderRadius: 6,
+                        background: '#fef2f2',
+                        border: '1px solid #fecaca',
+                        color: '#991b1b',
+                        fontWeight: 600,
+                        display: 'inline-flex',
+                        alignItems: 'center',
+                        gap: 4,
+                      }}
+                    >
+                      <AlertOctagon className="w-3 h-3" />
+                      {ld.name}: {ld.lagReason}
+                    </span>
+                  ))}
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* ── Main 2-Column Workspaces ── */}
@@ -783,6 +1210,273 @@ export default async function FounderDashboard() {
             </div>
           </div>
         </div>
+      </div>
+
+      {/* ── Team & Contributor Performance Table ── */}
+      <div className="card" style={{ marginTop: 28 }}>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            paddingBottom: 16,
+            borderBottom: '1px solid #ede7d3',
+            marginBottom: 20,
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <div
+              style={{
+                width: 32,
+                height: 32,
+                borderRadius: 8,
+                background: 'rgba(202, 47, 43, 0.08)',
+                border: '1px solid rgba(202, 47, 43, 0.16)',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'var(--color-brand)',
+              }}
+            >
+              <Users2 className="w-4 h-4" />
+            </div>
+            <div>
+              <h2 style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-text-primary)' }}>
+                Team Performance & Contributor Intelligence
+              </h2>
+              <div style={{ fontSize: 12, color: 'var(--color-text-muted)' }}>
+                Individual delivery rates, completion velocity, and active workload distribution
+              </div>
+            </div>
+          </div>
+
+          <Link
+            href="/founder/staff"
+            style={{
+              fontSize: 12.5,
+              fontWeight: 600,
+              color: 'var(--color-brand)',
+              textDecoration: 'none',
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 4,
+            }}
+          >
+            <span>Manage Team ({members.length})</span>
+            <ChevronRight className="w-3.5 h-3.5" />
+          </Link>
+        </div>
+
+        {teamPerf.length === 0 ? (
+          <div
+            style={{
+              padding: '24px',
+              textAlign: 'center',
+              color: 'var(--color-text-muted)',
+              fontSize: 13,
+            }}
+          >
+            No team members added yet. Invite staff from the{' '}
+            <Link href="/founder/staff" style={{ color: 'var(--color-brand)' }}>
+              Staff Management page
+            </Link>
+            .
+          </div>
+        ) : (
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13 }}>
+              <thead>
+                <tr style={{ borderBottom: '2px solid #ede7d3', textAlign: 'left' }}>
+                  <th style={{ padding: '10px 12px', fontWeight: 700, color: 'var(--color-text-muted)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                    Operator
+                  </th>
+                  <th style={{ padding: '10px 12px', fontWeight: 700, color: 'var(--color-text-muted)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                    Role
+                  </th>
+                  <th style={{ padding: '10px 12px', fontWeight: 700, color: 'var(--color-text-muted)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                    Tasks (Done / Active)
+                  </th>
+                  <th style={{ padding: '10px 12px', fontWeight: 700, color: 'var(--color-text-muted)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.6px', minWidth: 140 }}>
+                    Completion Rate
+                  </th>
+                  <th style={{ padding: '10px 12px', fontWeight: 700, color: 'var(--color-text-muted)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                    Delivery Timeliness
+                  </th>
+                  <th style={{ padding: '10px 12px', fontWeight: 700, color: 'var(--color-text-muted)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                    Overdue
+                  </th>
+                  <th style={{ padding: '10px 12px', fontWeight: 700, color: 'var(--color-text-muted)', fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.6px' }}>
+                    Score & Status
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {teamPerf.map((m) => {
+                  const statusColors = {
+                    EXCELLING: { bg: '#ecfdf5', text: '#065f46', border: '#a7f3d0' },
+                    ON_TRACK: { bg: '#f0f9ff', text: '#075985', border: '#bae6fd' },
+                    NEEDS_SUPPORT: { bg: '#fffbeb', text: '#92400e', border: '#fde68a' },
+                    LAGGING: { bg: '#fef2f2', text: '#991b1b', border: '#fecaca' },
+                  }
+                  const badgeStyle = statusColors[m.status] || statusColors.ON_TRACK
+
+                  return (
+                    <tr
+                      key={m.userId}
+                      style={{
+                        borderBottom: '1px solid #f2ede0',
+                        transition: 'background 0.15s ease',
+                      }}
+                    >
+                      {/* Operator Name & Avatar */}
+                      <td style={{ padding: '12px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <div
+                            style={{
+                              width: 32,
+                              height: 32,
+                              borderRadius: '50%',
+                              background: 'var(--color-brand)',
+                              color: '#ffffff',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              fontWeight: 700,
+                              fontSize: 12,
+                              flexShrink: 0,
+                            }}
+                          >
+                            {m.fullName.charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <div style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>
+                              {m.fullName}
+                            </div>
+                            {m.email && (
+                              <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>
+                                {m.email}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+
+                      {/* Role */}
+                      <td style={{ padding: '12px' }}>
+                        <span className={`badge ${m.role === 'FOUNDER' ? 'badge-brand' : 'badge-neutral'}`}>
+                          {m.role || 'STAFF'}
+                        </span>
+                      </td>
+
+                      {/* Tasks breakdown */}
+                      <td style={{ padding: '12px' }}>
+                        <span style={{ fontWeight: 600, color: 'var(--color-text-primary)' }}>
+                          {m.completedTasks}
+                        </span>
+                        <span style={{ color: 'var(--color-text-muted)' }}> / {m.totalTasks}</span>
+                        {m.inProgressTasks > 0 && (
+                          <span style={{ fontSize: 11, color: 'var(--color-info)', marginLeft: 6 }}>
+                            ({m.inProgressTasks} active)
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Completion Bar */}
+                      <td style={{ padding: '12px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div className="progress-bar" style={{ height: 6, flex: 1, minWidth: 60 }}>
+                            <div
+                              className="progress-fill progress-fill-brand"
+                              style={{ width: `${m.completionRate}%` }}
+                            />
+                          </div>
+                          <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--color-text-primary)', width: 34 }}>
+                            {m.completionRate}%
+                          </span>
+                        </div>
+                      </td>
+
+                      {/* Timeliness Split */}
+                      <td style={{ padding: '12px' }}>
+                        {m.completedTasks === 0 ? (
+                          <span style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>—</span>
+                        ) : (
+                          <div style={{ display: 'flex', gap: 4 }}>
+                            {m.earlyCount > 0 && (
+                              <span style={{ fontSize: 10.5, padding: '1px 6px', borderRadius: 4, background: '#ecfdf5', color: '#065f46', fontWeight: 600 }}>
+                                {m.earlyCount} early
+                              </span>
+                            )}
+                            {m.onTimeCount > 0 && (
+                              <span style={{ fontSize: 10.5, padding: '1px 6px', borderRadius: 4, background: '#f0f9ff', color: '#0369a1', fontWeight: 600 }}>
+                                {m.onTimeCount} on-time
+                              </span>
+                            )}
+                            {m.lateCount > 0 && (
+                              <span style={{ fontSize: 10.5, padding: '1px 6px', borderRadius: 4, background: '#fff1f2', color: '#be123c', fontWeight: 600 }}>
+                                {m.lateCount} late
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </td>
+
+                      {/* Overdue Count */}
+                      <td style={{ padding: '12px' }}>
+                        {m.overdueCount > 0 ? (
+                          <span
+                            style={{
+                              fontSize: 11,
+                              fontWeight: 700,
+                              color: '#991b1b',
+                              background: '#fef2f2',
+                              padding: '2px 8px',
+                              borderRadius: 4,
+                              border: '1px solid #fecaca',
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: 3,
+                            }}
+                          >
+                            <AlertCircle className="w-3 h-3" />
+                            {m.overdueCount} overdue
+                          </span>
+                        ) : (
+                          <span style={{ fontSize: 12, color: 'var(--color-success)', fontWeight: 500 }}>
+                            0
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Score & Status */}
+                      <td style={{ padding: '12px' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--color-text-primary)' }}>
+                            {m.performanceScore}
+                          </span>
+                          <span
+                            style={{
+                              fontSize: 10.5,
+                              fontWeight: 700,
+                              padding: '2px 7px',
+                              borderRadius: 6,
+                              background: badgeStyle.bg,
+                              color: badgeStyle.text,
+                              border: `1px solid ${badgeStyle.border}`,
+                              letterSpacing: '0.3px',
+                            }}
+                          >
+                            {m.status.replace('_', ' ')}
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   )

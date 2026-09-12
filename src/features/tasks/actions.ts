@@ -40,13 +40,17 @@ export async function createTask(
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return { error: 'Unauthorized' }
 
+  // If self_assign flag is set (staff creating their own task), auto-assign to themselves
+  const selfAssign = formData.get('self_assign') === 'true'
+  const assignedTo = selfAssign ? user.id : (validated.data.assigned_to || null)
+
   const { data, error } = await supabase
     .from('tasks')
     .insert({
       startup_id: validated.data.startup_id,
       weekly_plan_id: validated.data.weekly_plan_id || null,
       domain_id: validated.data.domain_id || null,
-      assigned_to: validated.data.assigned_to || null,
+      assigned_to: assignedTo,
       created_by: user.id,
       title: validated.data.title,
       description: validated.data.description || null,
@@ -140,9 +144,14 @@ export async function updateTask(
     const newStatus = formData.get('status')?.toString()
     if (newStatus && ['TODO', 'IN_PROGRESS', 'DONE'].includes(newStatus)) {
       updates.status = newStatus
-      if (newStatus === 'DONE' && existingTask.status !== 'DONE') {
+      if (newStatus === 'IN_PROGRESS' && !existingTask.started_at) {
+        updates.started_at = new Date().toISOString()
+      } else if (newStatus === 'DONE' && existingTask.status !== 'DONE') {
         const completedAt = new Date().toISOString()
         updates.completed_at = completedAt
+        if (!existingTask.started_at) {
+          updates.started_at = completedAt
+        }
         const effectiveDueDate = (updates.due_date as string | null) ?? existingTask.due_date
         if (effectiveDueDate) {
           updates.completion_status = calculateTaskCompletionStatus(completedAt, effectiveDueDate)
@@ -199,7 +208,7 @@ export async function updateTaskStatus(
   // Get existing task to check due_date
   const { data: task } = await supabase
     .from('tasks')
-    .select('due_date, startup_id, weekly_plan_id, title')
+    .select('due_date, startup_id, weekly_plan_id, title, started_at')
     .eq('id', id)
     .single()
 
@@ -207,9 +216,16 @@ export async function updateTaskStatus(
 
   const updates: Record<string, unknown> = { status }
 
+  if (status === 'IN_PROGRESS' && !task.started_at) {
+    updates.started_at = new Date().toISOString()
+  }
+
   if (status === 'DONE') {
     const completedAt = new Date().toISOString()
     updates.completed_at = completedAt
+    if (!task.started_at) {
+      updates.started_at = completedAt
+    }
 
     if (task.due_date) {
       updates.completion_status = calculateTaskCompletionStatus(completedAt, task.due_date)
@@ -261,6 +277,9 @@ export async function updateTaskStatus(
   revalidatePath('/founder/tasks')
   revalidatePath('/staff/tasks')
   revalidatePath('/founder/weekly-plan')
+  revalidatePath('/staff')
+  revalidatePath('/founder')
+  revalidatePath('/tv')
 
   return { success: 'Task status updated' }
 }

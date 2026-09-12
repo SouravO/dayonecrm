@@ -57,6 +57,7 @@ export default async function StaffTasksPage() {
         weeklyPlans={weeklyPlans || []}
         staffMembers={(staffMembers as any) || []}
         isFounder={false}
+        isStaff={true}
         currentUserId={session!.id}
         currentPlanId={currentPlan?.id}
       />
