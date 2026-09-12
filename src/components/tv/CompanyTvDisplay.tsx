@@ -49,6 +49,7 @@ import {
 import { Logo } from '@/components/brand/Logo'
 import { CompanyLogo } from '@/components/brand/CompanyLogo'
 import type { TvPayload } from '@/lib/tv/telemetry'
+import { createClient } from '@/lib/supabase/client'
 
 export interface StartupOption {
   id: string
@@ -67,20 +68,21 @@ export interface StartupOption {
 interface Props {
   initialData: TvPayload
   startupId: string
-  initialTheme?: 'dark' | 'cream'
+  initialTheme?: 'cream'
   allStartups?: StartupOption[]
 }
 
 export function CompanyTvDisplay({
   initialData,
   startupId,
-  initialTheme = 'cream',
   allStartups = [],
 }: Props) {
   const [data, setData] = useState<TvPayload>(initialData)
   const [currentStartupId, setCurrentStartupId] = useState<string>(startupId || initialData.startup.id)
   const [isFullscreen, setIsFullscreen] = useState(false)
-  const [countdown, setCountdown] = useState<number>(20)
+  const [lastUpdatedTime, setLastUpdatedTime] = useState<string>('')
+  const [isRealtimeConnected, setIsRealtimeConnected] = useState(false)
+  const [isRealtimeEvent, setIsRealtimeEvent] = useState(false)
   const [clock, setClock] = useState<string>('')
   const [clockDate, setClockDate] = useState<string>('')
   const [isRefreshing, setIsRefreshing] = useState(false)
@@ -189,7 +191,14 @@ export function CompanyTvDisplay({
       if (res.ok) {
         const json = await res.json()
         setData(json)
-        setCountdown(20)
+        setLastUpdatedTime(
+          new Date().toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false,
+          })
+        )
       }
     } catch (e) {
       console.error('Failed to sync TV telemetry:', e)
@@ -198,20 +207,89 @@ export function CompanyTvDisplay({
     }
   }, [currentStartupId])
 
-  // Periodic Telemetry Polling (20s)
+  // ── Event-Driven Realtime Subscription (Zero Polling) ──
+  // Subscribes to Supabase Realtime changes on telemetry_events, tasks, weekly_plans, and domains.
+  // When ANY change occurs in the database, the dashboard immediately updates without unnecessary periodic API calls.
   useEffect(() => {
-    const interval = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          fetchTelemetry()
-          return 20
-        }
-        return prev - 1
-      })
-    }, 1000)
+    const supabase = createClient()
 
-    return () => clearInterval(interval)
-  }, [fetchTelemetry])
+    // Primary Realtime Channel for Telemetry
+    const channel = supabase
+      .channel(`tv-telemetry-${currentStartupId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'telemetry_events',
+        },
+        (payload) => {
+          const newEvent = payload.new as { startup_id?: string; event_type?: string }
+          // Trigger fetch if the event belongs to this startup or is studio-wide
+          if (!newEvent?.startup_id || newEvent.startup_id === currentStartupId) {
+            setIsRealtimeEvent(true)
+            setTimeout(() => setIsRealtimeEvent(false), 2500)
+            fetchTelemetry()
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'tasks',
+        },
+        () => {
+          setIsRealtimeEvent(true)
+          setTimeout(() => setIsRealtimeEvent(false), 2500)
+          fetchTelemetry()
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'weekly_plans',
+        },
+        () => {
+          setIsRealtimeEvent(true)
+          setTimeout(() => setIsRealtimeEvent(false), 2500)
+          fetchTelemetry()
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'activity_logs',
+        },
+        () => {
+          setIsRealtimeEvent(true)
+          setTimeout(() => setIsRealtimeEvent(false), 2500)
+          fetchTelemetry()
+        }
+      )
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          setIsRealtimeConnected(true)
+        } else if (status === 'CLOSED' || status === 'CHANNEL_ERROR') {
+          setIsRealtimeConnected(false)
+        }
+      })
+
+    // Fallback Heartbeat: A very low-frequency check (every 10 minutes) strictly to recover from extended network sleep
+    const fallbackHeartbeat = setInterval(() => {
+      fetchTelemetry()
+    }, 10 * 60 * 1000)
+
+    return () => {
+      clearInterval(fallbackHeartbeat)
+      supabase.removeChannel(channel)
+    }
+  }, [currentStartupId, fetchTelemetry])
 
   // Handle Switch to Specific Startup
   const handleSelectStartup = useCallback(async (targetStartup: StartupOption) => {
@@ -230,7 +308,14 @@ export function CompanyTvDisplay({
         const json = await res.json()
         setData(json)
         setCurrentStartupId(targetStartup.id)
-        setCountdown(20)
+        setLastUpdatedTime(
+          new Date().toLocaleTimeString('en-US', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: false,
+          })
+        )
 
         // Update URL path without full page reload
         if (typeof window !== 'undefined') {
@@ -479,7 +564,7 @@ export function CompanyTvDisplay({
 
         {/* Center: Live Telemetry Stream + Auto-Cycle Carousel Control + Clock */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-          {/* Live Stream Badge */}
+          {/* Live Realtime Event-Driven Badge */}
           <div
             style={{
               display: 'flex',
@@ -487,12 +572,14 @@ export function CompanyTvDisplay({
               gap: 6,
               padding: '4px 12px',
               borderRadius: 100,
-              background: colors.accentGreenBg,
-              border: `1px solid ${colors.accentGreenBorder}`,
+              background: isRealtimeEvent ? '#dcfce7' : colors.accentGreenBg,
+              border: `1px solid ${isRealtimeEvent ? '#86efac' : colors.accentGreenBorder}`,
               fontSize: 10.5,
               fontWeight: 800,
               letterSpacing: '0.6px',
               color: colors.accentGreen,
+              transition: 'all 0.25s ease',
+              boxShadow: isRealtimeEvent ? '0 0 12px rgba(22, 163, 74, 0.4)' : 'none',
             }}
           >
             <span
@@ -502,11 +589,12 @@ export function CompanyTvDisplay({
                 borderRadius: '50%',
                 background: colors.accentGreen,
                 display: 'inline-block',
+                boxShadow: isRealtimeEvent ? '0 0 8px #16a34a' : 'none',
               }}
             />
-            <span>LIVE TELEMETRY STREAM</span>
+            <span>{isRealtimeEvent ? 'DATA UPDATED' : isRealtimeConnected ? 'LIVE REALTIME' : 'LIVE TELEMETRY'}</span>
             <span style={{ opacity: 0.75, fontSize: 10, fontFamily: 'var(--font-mono)' }}>
-              ({countdown}s)
+              {isRealtimeEvent ? '● Just Now' : lastUpdatedTime ? `Sync: ${lastUpdatedTime}` : '● Listening'}
             </span>
           </div>
 
@@ -1783,7 +1871,11 @@ export function CompanyTvDisplay({
               PEOPLE × BRANDS × BIGGER POSSIBILITIES
             </span>
             <span style={{ fontSize: 10, color: colors.textMuted }}>
-              {isAutoCycle ? `Auto-Cycle (${Math.round((autoCycleProgress / 100) * autoCycleSeconds)}s)` : 'Sync: 20s'}
+              {isAutoCycle
+                ? `Auto-Cycle (${Math.round((autoCycleProgress / 100) * autoCycleSeconds)}s)`
+                : isRealtimeConnected
+                ? 'Realtime: Listening for DB events'
+                : 'Realtime: Connected'}
             </span>
           </div>
         </footer>
