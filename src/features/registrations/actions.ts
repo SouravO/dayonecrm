@@ -99,6 +99,7 @@ export async function registerStartup(
   const { error: profileError } = await adminClient.from('profiles').insert({
     id: userId,
     full_name: founder_name,
+    email,
     phone: phone || null,
     role: 'FOUNDER',
   })

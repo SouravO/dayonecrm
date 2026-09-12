@@ -63,6 +63,7 @@ export async function addStaffMember(
   const { error: profileError } = await adminClient.from('profiles').insert({
     id: staffUserId,
     full_name,
+    email,
     phone: phone || null,
     role: 'STAFF',
   })

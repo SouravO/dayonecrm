@@ -84,31 +84,98 @@ export function StaffClient({ startupId, staff }: Props) {
       ) : (
         <div className="grid-2">
           {staff.map((member) => (
-            <div key={member.id} className="card">
-              <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                <div className="avatar avatar-lg">
-                  {member.profile?.full_name?.charAt(0)?.toUpperCase()}
+            <div key={member.id} className="card" style={{ padding: '18px 20px' }}>
+              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+                <div
+                  className="avatar avatar-lg"
+                  style={{
+                    background: 'linear-gradient(135deg, #ca2f2b 0%, #9e1f1c 100%)',
+                    color: '#ffffff',
+                    fontWeight: 700,
+                    fontSize: 18,
+                    flexShrink: 0,
+                  }}
+                >
+                  {member.profile?.full_name?.charAt(0)?.toUpperCase() || 'S'}
                 </div>
-                <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-text-primary)' }}>
-                    {member.profile?.full_name}
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4, flexWrap: 'wrap' }}>
+                    <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--color-text-primary)' }}>
+                      {member.profile?.full_name || 'Staff Member'}
+                    </div>
+                    <span
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 700,
+                        textTransform: 'uppercase',
+                        letterSpacing: '0.4px',
+                        padding: '2px 8px',
+                        borderRadius: 100,
+                        background: '#f1ede4',
+                        color: '#6e6354',
+                        border: '1px solid #e0d8c8',
+                      }}
+                    >
+                      Staff Operator
+                    </span>
                   </div>
-                  {member.profile?.phone && (
-                    <div style={{ fontSize: 13, color: 'var(--color-text-muted)' }}>
-                      {member.profile.phone}
+
+                  {member.profile?.email && (
+                    <div
+                      style={{
+                        fontSize: 13,
+                        color: 'var(--color-text-secondary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        marginBottom: 3,
+                        wordBreak: 'break-all',
+                      }}
+                    >
+                      <span>✉️</span>
+                      <span>{member.profile.email}</span>
                     </div>
                   )}
-                  <div style={{ fontSize: 12, color: 'var(--color-text-muted)', marginTop: 2 }}>
-                    Joined {new Date(member.created_at).toLocaleDateString()}
+
+                  {member.profile?.phone && (
+                    <div
+                      style={{
+                        fontSize: 12.5,
+                        color: 'var(--color-text-muted)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 6,
+                        marginBottom: 3,
+                      }}
+                    >
+                      <span>📞</span>
+                      <span>{member.profile.phone}</span>
+                    </div>
+                  )}
+
+                  <div
+                    style={{
+                      fontSize: 11.5,
+                      color: 'var(--color-text-muted)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      marginTop: 6,
+                    }}
+                  >
+                    <span>📅</span>
+                    <span>Joined {new Date(member.created_at).toLocaleDateString()}</span>
                   </div>
                 </div>
+
                 <form action={removeAction}>
                   <input type="hidden" name="member_id" value={member.id} />
                   <button
                     type="submit"
                     disabled={removePending}
                     className="btn btn-danger btn-sm"
-                    title="Remove from startup"
+                    title="Remove staff member from startup"
+                    style={{ fontSize: 12, padding: '4px 10px' }}
                   >
                     Remove
                   </button>
